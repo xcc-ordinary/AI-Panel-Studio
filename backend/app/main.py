@@ -3,8 +3,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.api.routes.discussions import router as discussions_router
 
 app = FastAPI(title="AI Panel Studio API")
+
+app.include_router(discussions_router)
 
 # 配置 CORS：只允许我们的前端地址访问，避免开发时跨域被浏览器拦截
 app.add_middleware(
