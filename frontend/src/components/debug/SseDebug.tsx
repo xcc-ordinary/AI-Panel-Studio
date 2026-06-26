@@ -29,7 +29,7 @@ export default function SseDebug() {
 
   const handleConnect = () => setDiscussionId(inputValue);
 
-  useSSE(discussionId, handleEvent);
+  useSSE({ discussionId, onEvent: handleEvent });
 
   return (
     <div style={{ padding: 16, fontFamily: "monospace", maxWidth: 900, margin: "0 auto" }}>
