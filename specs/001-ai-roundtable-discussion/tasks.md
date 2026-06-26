@@ -154,6 +154,9 @@
 #### Backend — SSE Infrastructure
 
 - [ ] T052 [US3] Create SSE manager: `backend/src/api/sse/manager.py` — per-discussion `asyncio.Queue` registry, `subscribe(discussion_id) -> AsyncGenerator`, `publish(discussion_id, event)`, `unsubscribe(discussion_id)`, event also persisted to Event table
+  // Phase 4 重构待办 ① 改"一讨论一 queue"为"一讨论多订阅者、各自 queue"，publish 做 fan-out 到所有订阅者
+  // Phase 4 重构待办 ② subscribe 加 finally 清理，客户端断开时注销其 queue
+  // Phase 4 重构待办 ③ publish 加 per-discussion asyncio.Lock 或唯一冲突重试，解决 seq 竞态
 - [ ] T053 [US3] Create SSE endpoint: `backend/src/api/sse/events.py` — `GET /api/discussions/{id}/events` → StreamingResponse with `text/event-stream`. Handle `Last-Event-ID` header: if present, send snapshot + replay missed events; otherwise start streaming live events
 - [ ] T054 [US3] Implement snapshot builder: `backend/src/api/sse/manager.py` — `build_snapshot(discussion_id) -> dict`: current consensus points + divergence points + last 20 utterances + current_round + last_event_seq
 
@@ -201,6 +204,7 @@
 ### Implementation for User Story 4
 
 - [ ] T071 [US4] Implement concurrency limit guard: `backend/src/api/routes/discussions.py` — before creating discussion, count active discussions, reject with 429 + active_count/max_concurrent if at limit
+  // 注意: 限流计数口径 = in_progress + pending_panelists,区别于首页展示的 active_count(仅计 in_progress)
 - [ ] T072 [US4] Add discussion_id filter enforcement: `backend/src/core/database.py` — add helper `ensure_discussion_scope(query, discussion_id)` for all discussion-scoped queries; add audit comment that cross-discussion queries are forbidden
 - [ ] T073 [US4] Verify cascade delete completeness: `backend/src/core/database.py` — verify FK ON DELETE CASCADE covers panelist, utterance, consensus_point, divergence_point, event. Add integration test for orphan record cleanup (T069 covers this)
 - [ ] T074 [P] [US4] Frontend concurrency display: `frontend/src/components/home/DiscussionList.tsx` — display "进行中: {active_count}/{max_concurrent}" indicator; show warning style when near limit

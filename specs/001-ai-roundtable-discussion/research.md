@@ -171,7 +171,7 @@ class LocalContentModerator(ContentModerator):
 |-------|-------|-----|------|
 | 0 | 深蓝 | #2563EB | Host default |
 | 1 | 朱红 | #DC2626 | Expert |
-| 2 | 翠绿 | #059669 | Expert |
+| 2 | 靛蓝 | #818CF8 | Expert |
 | 3 | 琥珀 | #D97706 | Expert |
 | 4 | 紫罗兰 | #7C3AED | Expert |
 | 5 | 天蓝 | #0891B2 | Expert |

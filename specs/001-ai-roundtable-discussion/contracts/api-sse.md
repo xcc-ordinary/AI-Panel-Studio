@@ -123,11 +123,12 @@ After this event, the SSE connection is closed by the server.
 Keep-alive ping, sent every 15 seconds when no other events.
 
 ```
-id: 9
 event: heartbeat
 data: {"timestamp":"2026-06-26T10:02:15Z"}
 
 ```
+
+**Note**: heartbeat deliberately has **no `id` field** — it must not alter the browser's `lastEventId`.
 
 If no heartbeat received for 30 seconds, client SHOULD assume connection lost and reconnect.
 
@@ -147,13 +148,12 @@ If no heartbeat received for 30 seconds, client SHOULD assume connection lost an
 ### `snapshot` Event (Reconnection Only)
 
 ```
-id: 0
 event: snapshot
 data: {"consensus_points":[...],"divergence_points":[...],"recent_utterances":[...],"current_round":12,"last_event_seq":12}
 
 ```
 
-**Note**: `snapshot` event has `id: 0` to distinguish from regular events. It is immediately followed by replay events.
+**Note**: snapshot deliberately has **no `id` field**. Per SSE spec, events without `id` do not alter the browser's `lastEventId`, so the reconnection sequence remains continuous. It is immediately followed by replay events.
 
 ---
 
