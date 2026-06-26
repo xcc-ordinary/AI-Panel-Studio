@@ -18,7 +18,8 @@ export function useSSE(
   useEffect(() => {
     if (!discussionId) return;
 
-    const url = `http://localhost:8000/api/discussions/${discussionId}/events`;
+    const base = import.meta.env.VITE_API_BASE || 'http://localhost:8010';
+    const url = `${base}/api/discussions/${discussionId}/events`;
     const es = new EventSource(url, { withCredentials: false });
 
     es.onmessage = (msg) => {

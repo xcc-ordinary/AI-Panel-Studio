@@ -1,6 +1,6 @@
 /** 临时调试组件：验证 SSE 事件流。Phase 3 验证后移除。 */
 import { useState, useRef, useCallback } from "react";
-import { useSSE, SSERawEvent } from "../../hooks/useSSE";
+import { useSSE, type SSERawEvent } from "../../hooks/useSSE";
 
 export default function SseDebug() {
   const [discussionId, setDiscussionId] = useState("seed-001-ai-open-source");
