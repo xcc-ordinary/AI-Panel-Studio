@@ -101,7 +101,7 @@ A single speech entry in the discussion transcript.
 | `id` | TEXT (UUID) | PK | Unique utterance identifier |
 | `discussion_id` | TEXT (UUID) | FK → Discussion.id, NOT NULL, INDEX | Owning discussion |
 | `panelist_id` | TEXT (UUID) | FK → Panelist.id, NOT NULL | Speaker |
-| `seq` | INTEGER | NOT NULL, UNIQUE per discussion | Monotonic sequence number (for SSE id) |
+| `round_no` | INTEGER | NOT NULL, UNIQUE per discussion | Round number for utterance ordering and pagination |
 | `type` | TEXT | NOT NULL | Utterance type |
 | `content` | TEXT | NOT NULL, 1–500 chars | Speech content (1–2 sentences) |
 | `created_at` | TEXT (ISO 8601) | NOT NULL | Timestamp |
@@ -119,9 +119,9 @@ A single speech entry in the discussion transcript.
 | `summary` | Host | Concluding natural-language summary |
 
 **Validation Rules**:
-- `seq` auto-increments per discussion (starts at 1)
+- `round_no` auto-increments per discussion (starts at 1)
 - `content` length 1–500 chars (enforced 1–2 sentence guideline)
-- Each utterance increments `Discussion.current_round` (one round = one utterance from any panelist)
+- Each utterance increments `Discussion.current_round` and `Utterance.round_no` (one round = one utterance from any panelist)
 - Expert utterances: `type` in (statement, rebuttal, supplement)
 - Host utterances: `type` in (opening, question, bridge, summary)
 
@@ -176,13 +176,15 @@ Internal event log for SSE reconnection support.
 |-------|------|-------------|-------------|
 | `id` | INTEGER | PK AUTOINCREMENT | Monotonic event ID (global) |
 | `discussion_id` | TEXT (UUID) | FK → Discussion.id, NOT NULL, INDEX | Owning discussion |
-| `seq` | INTEGER | NOT NULL, UNIQUE per discussion | Per-discussion sequence number |
+| `seq` | INTEGER | NOT NULL, UNIQUE per discussion | Per-discussion monotonic sequence number — **canonical source for SSE `id`** |
 | `event_type` | TEXT | NOT NULL | SSE event type string |
 | `payload_json` | TEXT | NOT NULL | Full event payload (JSON) |
 | `created_at` | TEXT (ISO 8601) | NOT NULL | Event timestamp |
 
 **Usage**:
-- Every SSE event is logged here for replay
+- Every SSE-pushable event (utterance, panelist_status, consensus_update, divergence_update, discussion_end, heartbeat) is logged here for replay
+- `Event.seq` is the **sole canonical source** for the SSE `id` field — it spans all event types within a discussion
+- `Utterance.round_no` is independent and used only for transcript ordering/pagination, NOT as SSE id
 - On reconnection with `Last-Event-ID`, server queries `WHERE discussion_id = ? AND seq > ? ORDER BY seq`
 - Pruned when discussion is deleted (cascade)
 
@@ -199,7 +201,7 @@ CREATE INDEX idx_panelist_discussion ON panelist(discussion_id);
 
 -- Utterance queries
 CREATE INDEX idx_utterance_discussion ON utterance(discussion_id);
-CREATE UNIQUE INDEX idx_utterance_discussion_seq ON utterance(discussion_id, seq);
+CREATE UNIQUE INDEX idx_utterance_discussion_round ON utterance(discussion_id, round_no);
 
 -- Consensus/Divergence queries
 CREATE INDEX idx_consensus_discussion ON consensus_point(discussion_id);

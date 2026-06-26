@@ -186,7 +186,7 @@ Confirm panelist roster and transition discussion to `in_progress`.
 Get discussion transcript (paginated).
 
 **Query Parameters**:
-- `before_seq` (int, optional): Get utterances before this sequence number (for loading older entries)
+- `before_round` (int, optional): Get utterances before this round number (for loading older entries)
 - `limit` (int, default=50): Max utterances to return
 
 **Response** `200`:
@@ -195,7 +195,7 @@ Get discussion transcript (paginated).
   "utterances": [
     {
       "id": "uuid",
-      "seq": 1,
+      "round_no": 1,
       "panelist_id": "uuid",
       "panelist_name": "张明远",
       "panelist_title": "科技媒体主编",
@@ -239,7 +239,7 @@ Get current consensus and divergence state (for snapshot on reconnection).
       "updated_at": "2026-06-26T10:05:00Z"
     }
   ],
-  "last_seq": 12
+  "last_event_seq": 12
 }
 ```
 

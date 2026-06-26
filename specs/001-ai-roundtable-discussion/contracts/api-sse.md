@@ -15,7 +15,7 @@
 ```
 GET /api/discussions/{discussion_id}/events
 Accept: text/event-stream
-Last-Event-ID: {last_received_seq}   // Optional: sent on reconnection
+Last-Event-ID: {last_received_event_seq}   // Optional: sent on reconnection, value from Event.seq
 ```
 
 ### Response Headers
@@ -40,7 +40,7 @@ data: {json_payload}
 
 ```
 
-- `id`: Monotonic sequence number per discussion (matches Utterance.seq or Event.seq)
+- `id`: Monotonic sequence number per discussion — **always sourced from `Event.seq`**, the sole canonical SSE sequence across all event types within a discussion
 - `event`: Event type string
 - `data`: JSON payload (single line)
 
@@ -55,7 +55,8 @@ New speech entry in transcript.
 ```
 id: 5
 event: utterance
-data: {"id":"uuid","seq":5,"panelist_id":"uuid","panelist_name":"李开放","panelist_title":"开源社区领袖","panelist_color":"#DC2626","type":"statement","content":"我认为开源不仅仅是代码共享，更是一种协作文化和创新机制。","created_at":"2026-06-26T10:02:00Z"}
+data: {"id":"uuid","round_no":5,"panelist_id":"uuid","panelist_name":"李开放","panelist_title":"开源社区领袖","panelist_color":"#DC2626","type":"statement","content":"我认为开源不仅仅是代码共享，更是一种协作文化和创新机制。","created_at":"2026-06-26T10:02:00Z"}
+// 注意: id(Event.seq) 与 round_no 相互独立——前者计入所有事件,后者仅计发言,示例数值相同纯属巧合。
 
 ```
 
@@ -136,11 +137,11 @@ If no heartbeat received for 30 seconds, client SHOULD assume connection lost an
 
 ### Client Reconnection Flow
 
-1. Client's `EventSource` auto-reconnects with `Last-Event-ID: {last_received_seq}` header
+1. Client's `EventSource` auto-reconnects with `Last-Event-ID: {last_received_event_seq}` header (value from `Event.seq`)
 2. Server detects `Last-Event-ID` header → reconnection mode
 3. Server response:
    - First event: `snapshot` with current consensus/divergence state + last 20 utterances
-   - Subsequent events: All events with `seq > Last-Event-ID` in order
+   - Subsequent events: All `Event` rows with `seq > Last-Event-ID` replayed in order
 4. Client merges snapshot into UI state, then processes replay events normally
 
 ### `snapshot` Event (Reconnection Only)
@@ -148,7 +149,7 @@ If no heartbeat received for 30 seconds, client SHOULD assume connection lost an
 ```
 id: 0
 event: snapshot
-data: {"consensus_points":[...],"divergence_points":[...],"recent_utterances":[...],"current_round":12,"last_seq":12}
+data: {"consensus_points":[...],"divergence_points":[...],"recent_utterances":[...],"current_round":12,"last_event_seq":12}
 
 ```
 

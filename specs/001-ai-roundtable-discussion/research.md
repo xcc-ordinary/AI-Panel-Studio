@@ -59,7 +59,7 @@ Authorization: Bearer $DEEPSEEK_API_KEY
 
 | Event | Data | Trigger |
 |-------|------|---------|
-| `utterance` | {id, panelist_id, name, title, content, color, type, seq, timestamp} | New utterance created |
+| `utterance` | {id, panelist_id, name, title, content, color, type, round_no, timestamp} | New utterance created |
 | `panelist_status` | {panelist_id, status, public_focus[]} | Panelist state change |
 | `consensus_update` | {consensus_id, content, involved_panelists[]} | Consensus point created/updated |
 | `divergence_update` | {divergence_id, description, camps[]} | Divergence point created/updated |
@@ -67,7 +67,7 @@ Authorization: Bearer $DEEPSEEK_API_KEY
 | `heartbeat` | {timestamp} | Every 15s to keep connection alive |
 
 **Snapshot + Last-Event-ID Recovery**:
-- Each SSE event carries an `id` field (monotonic sequence number per discussion)
+- Each SSE event carries an `id` field sourced from `Event.seq` — the sole canonical monotonic sequence per discussion spanning all event types
 - Client tracks `lastEventId`; on reconnect, sends `Last-Event-ID` header
 - Server receives `Last-Event-ID`, returns snapshot (current consensus + last 20 utterances), then replays events after that ID
 - Sequence numbers stored in `event` table alongside utterance/consensus records
