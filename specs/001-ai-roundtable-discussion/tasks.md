@@ -47,6 +47,14 @@
 - [ ] T011 Create content moderation MVP implementation: `backend/src/services/local_moderator.py` — `LocalContentModerator(ContentModerator)`: keyword blocklist + 1–200 char length check
 - [ ] T012 Run DB migrations: `backend/src/core/database.py` — CREATE TABLE statements for discussion, panelist, utterance, consensus_point, divergence_point, event per data-model.md, with indexes and FK ON DELETE CASCADE
 
+- [ ] T012b [P] Create seed data script: backend/scripts/seed.py
+  — 插入 ≥5 条高质量预设讨论,每条含:完整话题 + 1主持人+N专家阵容(姓名/职业/立场/颜色)
+  + 若干条 utterance 发言记录 + 至少1条共识 + 1条分歧样例。
+  覆盖不同领域话题(如:AI是否应开源/远程办公利弊/城市该不该限制私家车/
+  预制菜进校园/AI能否取代教师),供首页展示与E2E测试复用。
+  提供 `python -m backend.scripts.seed` 一键导入,幂等可重复执行。
+
+
 **Checkpoint**: Foundation ready — user story implementation can now begin in parallel
 
 ---
