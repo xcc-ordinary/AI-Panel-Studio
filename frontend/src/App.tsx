@@ -4,6 +4,7 @@ import DiscussionList from './components/home/DiscussionList';
 import CreateDiscussion from './components/home/CreateDiscussion';
 import PanelistRoster from './components/home/PanelistRoster';
 import SseDebug from './components/debug/SseDebug'; // TODO Phase4 移除
+import StudioView from './components/studio/StudioView';
 import './App.css';
 
 type Page =
@@ -11,7 +12,7 @@ type Page =
   | { name: 'create' }
   | { name: 'roster'; data: CreateDiscussionResponse }
   | { name: 'debug' }
-  | { name: 'studio'; discussionId: string };
+  | { name: 'studio'; discussionId: string; topic?: string };
 
 export default function App() {
   const [page, setPage] = useState<Page>({ name: 'home' });
@@ -24,8 +25,8 @@ export default function App() {
     setPage({ name: 'roster', data });
   }, []);
 
-  const handleConfirmed = useCallback((discussionId: string) => {
-    setPage({ name: 'studio', discussionId });
+  const handleConfirmed = useCallback((discussionId: string, topic: string) => {
+    setPage({ name: 'studio', discussionId, topic });
   }, []);
 
   return (
@@ -60,7 +61,10 @@ export default function App() {
 
       {/* 页面内容 */}
       {page.name === 'home' && (
-        <DiscussionList onCreateNew={goCreate} onJoin={id => setPage({ name: 'studio', discussionId: id })} />
+        <DiscussionList
+          onCreateNew={goCreate}
+          onJoin={(id, topic) => setPage({ name: 'studio', discussionId: id, topic })}
+        />
       )}
       {page.name === 'create' && (
         <CreateDiscussion onBack={goHome} onCreated={handleCreated} />
@@ -70,21 +74,11 @@ export default function App() {
       )}
       {page.name === 'debug' && <SseDebug />}
       {page.name === 'studio' && (
-        <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-          <p className="text-lg mb-2" style={{ color: 'var(--text-secondary)' }}>
-            演播厅 — Phase 4 实现
-          </p>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-            discussion_id: {page.discussionId}
-          </p>
-          <button
-            onClick={goHome}
-            className="px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer"
-            style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}
-          >
-            返回首页
-          </button>
-        </div>
+        <StudioView
+          discussionId={page.discussionId}
+          topic={page.topic}
+          onBack={goHome}
+        />
       )}
     </div>
   );

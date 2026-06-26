@@ -8,7 +8,7 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 interface PanelistRosterProps {
   data: CreateDiscussionResponse;
   onBackToCreate: () => void;
-  onConfirmed: (discussionId: string) => void;
+  onConfirmed: (discussionId: string, topic: string) => void;
 }
 
 export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: PanelistRosterProps) {
@@ -24,7 +24,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
     setError(null);
     try {
       if (data.discussion_id !== 'mock-d') await confirmPanelists(data.discussion_id);
-      onConfirmed(data.discussion_id);
+      onConfirmed(data.discussion_id, data.topic);
     } catch (err) {
       setError((err as Error).message);
     } finally {

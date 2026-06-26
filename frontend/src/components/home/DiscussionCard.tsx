@@ -4,7 +4,7 @@ import { getColor } from '../../utils/colors';
 
 interface DiscussionCardProps {
   discussion: Discussion;
-  onClick: (id: string) => void;
+  onClick: (id: string, topic: string) => void;
 }
 
 /** 按 expert_count 渲染 N 位专家 + 1 位主持人的示意色点。 */
@@ -34,8 +34,8 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
 
   return (
     <article
-      onClick={() => onClick(discussion.id)}
-      onKeyDown={e => { if (e.key === 'Enter') onClick(discussion.id); }}
+      onClick={() => onClick(discussion.id, discussion.topic)}
+      onKeyDown={e => { if (e.key === 'Enter') onClick(discussion.id, discussion.topic); }}
       tabIndex={0}
       role="button"
       aria-label={`${discussion.topic}——${discussion.panelist_count || discussion.expert_count + 1}位嘉宾，${isLive ? '进行中' : '已结束'}，第${discussion.current_round}轮`}

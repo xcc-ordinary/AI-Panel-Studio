@@ -8,7 +8,7 @@ import LoadingSkeleton from '../shared/LoadingSkeleton';
 
 interface DiscussionListProps {
   onCreateNew: () => void;
-  onJoin: (id: string) => void;
+  onJoin: (id: string, topic: string) => void;
 }
 
 export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListProps) {
@@ -99,7 +99,7 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
       {!loading && data && data.discussions.length > 0 && (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {data.discussions.map(d => (
-            <DiscussionCard key={d.id} discussion={d} onClick={onJoin} />
+            <DiscussionCard key={d.id} discussion={d} onClick={(id, topic) => onJoin(id, topic)} />
           ))}
         </div>
       )}
