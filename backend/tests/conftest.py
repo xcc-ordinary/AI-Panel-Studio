@@ -1,0 +1,80 @@
+"""共享 pytest 夹具：临时数据库 + FastAPI TestClient，绝不污染 seed 数据库。"""
+import os
+import uuid
+import pytest
+import aiosqlite
+from datetime import datetime, timezone
+from httpx import ASGITransport, AsyncClient
+
+from app.main import app
+from app.database import get_db, init_db
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+# ── 临时数据库 fixture ──────────────────────────────────────────
+
+@pytest.fixture
+async def db():
+    """创建临时 aiosqlite 数据库，初始化 schema，yield 连接，完成后清理。"""
+    db_path = f"data/test_{uuid.uuid4().hex}.db"
+    os.makedirs("data", exist_ok=True)
+
+    conn = await aiosqlite.connect(db_path)
+    conn.row_factory = aiosqlite.Row
+    await conn.execute("PRAGMA journal_mode=WAL")
+    await conn.execute("PRAGMA foreign_keys=ON")
+
+    # 临时覆盖 database 模块的全局 _db
+    import app.database as db_module
+    db_module._db = conn
+
+    await init_db()
+
+    yield conn
+
+    await conn.close()
+    db_module._db = None
+    try:
+        os.remove(db_path)
+    except OSError:
+        pass
+
+
+# ── FastAPI 依赖覆盖 ────────────────────────────────────────────
+
+@pytest.fixture
+async def client(db):
+    """返回 AsyncClient，其 get_db 依赖被覆盖为测试数据库。"""
+    async def override_get_db():
+        return db
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+        yield ac
+
+    app.dependency_overrides.clear()
+
+
+# ── 辅助函数：插入测试数据 ──────────────────────────────────────
+
+async def insert_discussion(db, id, topic, status="in_progress", expert_count=3, max_rounds=30, current_round=0, created_at=None, ended_at=None):
+    await db.execute(
+        "INSERT INTO discussion (id, topic, status, expert_count, max_rounds, current_round, created_at, ended_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (id, topic, status, expert_count, max_rounds, current_round, created_at or _now(), ended_at),
+    )
+    await db.commit()
+
+
+async def insert_panelist(db, id, discussion_id, role="expert", name="测试专家", title="测试Title", stance="测试立场", color="#DC2626", status="idle", sort_order=1):
+    await db.execute(
+        "INSERT INTO panelist (id, discussion_id, role, name, title, stance, color, status, public_focus, sort_order) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', ?)",
+        (id, discussion_id, role, name, title, stance, color, status, sort_order),
+    )
+    await db.commit()
