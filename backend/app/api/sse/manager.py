@@ -52,7 +52,7 @@ async def subscribe(discussion_id: str):
             lines = await asyncio.wait_for(queue.get(), timeout=15.0)
             yield lines
         except asyncio.TimeoutError:
-            yield f"id: 0\nevent: heartbeat\ndata: {{\"timestamp\":\"{_now()}\"}}\n\n"
+            yield f"event: heartbeat\ndata: {{\"timestamp\":\"{_now()}\"}}\n\n"
 
 
 async def get_events_after_seq(discussion_id: str, after_seq: int) -> list[str]:
