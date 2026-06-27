@@ -31,45 +31,26 @@ export default function App() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--bg-canvas)' }}>
-      {/* Apple Studio 磨砂玻璃导航 */}
-      <nav
-        className="flex items-center gap-4 px-6 py-3 text-sm sticky top-0 z-10"
-        style={{
-          background: 'var(--glass-bg)',
-          backdropFilter: 'blur(var(--glass-blur))',
-          WebkitBackdropFilter: 'blur(var(--glass-blur))',
-          borderBottom: '0.5px solid var(--glass-border)',
-        }}
-      >
-        <span
-          className="font-semibold text-[15px] tracking-tight mr-4"
-          style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-primary)' }}
-        >
+      {/* Apple Studio — 高强度磨砂玻璃导航 */}
+      <nav className="glass-nav flex items-center gap-5 px-6 py-2.5 text-[13px] sticky top-0 z-10">
+        <span className="text-heading text-[15px] mr-2 tracking-tight">
           AI Panel Studio
         </span>
-        <button
-          onClick={goHome}
-          className="cursor-pointer transition-colors duration-[var(--duration-fast)]"
+        <button onClick={goHome} className="cursor-pointer transition-all duration-[var(--duration-fast)]"
           style={{
             color: page.name === 'home' ? 'var(--accent-brand)' : 'var(--text-secondary)',
             fontWeight: page.name === 'home' ? 500 : 400,
-          }}
-        >
+          }}>
           首页
         </button>
-        <button
-          onClick={goCreate}
-          className="cursor-pointer transition-colors duration-[var(--duration-fast)]"
+        <button onClick={goCreate} className="cursor-pointer transition-all duration-[var(--duration-fast)]"
           style={{
             color: page.name === 'create' || page.name === 'roster' ? 'var(--accent-brand)' : 'var(--text-secondary)',
             fontWeight: page.name === 'create' || page.name === 'roster' ? 500 : 400,
-          }}
-        >
+          }}>
           发起讨论
         </button>
-        <button
-          onClick={goDebug}
-          className="cursor-pointer transition-colors duration-[var(--duration-fast)] ml-auto text-xs"
+        <button onClick={goDebug} className="cursor-pointer transition-all duration-[var(--duration-fast)] ml-auto text-xs"
           style={{ color: 'var(--text-muted)' }}
         >
           SSE 调试

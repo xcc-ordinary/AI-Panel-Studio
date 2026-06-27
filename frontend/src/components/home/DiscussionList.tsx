@@ -34,9 +34,9 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
   }, []);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-6 sm:px-8 py-12">
+    <div className="max-w-[1280px] mx-auto px-8 sm:px-10 py-14">
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-10">
+      <div className="flex items-center justify-between mb-12">
         <div>
           <h1
             className="text-[28px] font-bold mb-1 tracking-tight"

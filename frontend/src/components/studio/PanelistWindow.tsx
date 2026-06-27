@@ -1,5 +1,6 @@
-/** Apple Studio — 单个嘉宾状态小窗: 玻璃卡片 + 色块 + 身份 + 状态 + 关注点 */
+/** Apple Studio — 单个嘉宾状态小窗: 玻璃卡片 + 色块 + 身份 + 状态 + 发言跑马灯 */
 import type { PanelistStatus } from '../../types';
+import { getColor } from '../../utils/colors';
 import ColorBadge from '../shared/ColorBadge';
 import StatusIndicator from './StatusIndicator';
 
@@ -17,16 +18,28 @@ interface PanelistWindowProps {
 }
 
 export default function PanelistWindow({ panelist, isHost }: PanelistWindowProps) {
+  const isSpeaking = panelist.status === 'speaking';
+  const { hex, soft } = getColor(panelist.colorIndex);
+
   return (
     <div
       data-testid={`panelist-window-${panelist.name}`}
-      className="p-4 rounded-[16px] transition-colors duration-[var(--duration-fast)]"
+      className="p-4 rounded-[16px] transition-all duration-[var(--duration-fast)]"
       style={{
         background: isHost ? 'rgba(255,255,255,0.04)' : 'var(--glass-bg)',
         backdropFilter: 'blur(var(--glass-blur))',
         WebkitBackdropFilter: 'blur(var(--glass-blur))',
-        border: '0.5px solid var(--glass-border)',
-        boxShadow: 'var(--glass-shadow)',
+        border: isSpeaking
+          ? `1px solid ${hex}`
+          : '0.5px solid var(--glass-border)',
+        boxShadow: isSpeaking
+          ? `0 0 16px ${soft}, 0 0 32px ${soft}`
+          : 'var(--glass-shadow)',
+        animation: isSpeaking
+          ? `speaking-marquee 2s var(--ease-apple) infinite`
+          : 'none',
+        color: isSpeaking ? hex : 'inherit',
+        transform: isSpeaking ? 'scale(1.02)' : 'scale(1)',
       }}
     >
       {/* Header: badge + name + role */}

@@ -27,45 +27,47 @@
    ═══════════════════════════════════════════════════════════ */
 :root {
   /* ── Background hierarchy ── */
-  --bg-canvas: #1C1C1E;                       /* Apple deep charcoal */
-  --bg-surface: rgba(44, 44, 46, 0.70);       /* glass base */
-  --bg-elevated: rgba(58, 58, 60, 0.75);      /* glass elevated */
-  --bg-raised: rgba(72, 72, 74, 0.65);        /* glass raised (inputs/chips) */
+  --bg-canvas: #121213;
+  --bg-surface: rgba(30, 30, 32, 0.72);
+  --bg-elevated: rgba(44, 44, 46, 0.78);
+  --bg-raised: rgba(58, 58, 60, 0.70);
 
   /* ── Text ── */
-  --text-primary: #F5F5F7;                    /* Apple primary label */
-  --text-secondary: #A1A1A6;                  /* Apple secondary label */
-  --text-muted: #6E6E73;                      /* Apple tertiary label */
+  --text-primary: rgba(255, 255, 255, 0.85);
+  --text-secondary: rgba(255, 255, 255, 0.55);
+  --text-muted: rgba(255, 255, 255, 0.35);
 
   /* ── Borders ── */
-  --border-default: rgba(255, 255, 255, 0.08);
-  --border-accent: rgba(255, 255, 255, 0.14);
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-accent: rgba(255, 255, 255, 0.10);
 
   /* ── Semantic accents ── */
-  --accent-brand: #0A84FF;                    /* Apple system blue */
-  --accent-positive: #30D158;                 /* Apple system green */
-  --accent-divergence: #FF9F0A;               /* Apple system orange */
-  --accent-live: #FF453A;                     /* Apple system red */
+  --accent-brand: #0A84FF;
+  --accent-positive: #30D158;
+  --accent-divergence: #FF9F0A;
+  --accent-live: #FF453A;
 
   /* ── Glass material tokens ── */
-  --glass-bg: rgba(44, 44, 46, 0.60);
-  --glass-bg-hover: rgba(58, 58, 60, 0.70);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --glass-blur: 16px;
-  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  --glass-nav-bg: rgba(18, 18, 19, 0.72);
+  --glass-nav-blur: 40px;
+  --glass-nav-border-top: rgba(255, 255, 255, 0.18);
+  --glass-nav-border-bottom: rgba(255, 255, 255, 0.06);
+  --glass-card-bg: rgba(30, 30, 32, 0.72);
+  --glass-card-blur: 12px;
+  --glass-card-hover-bg: rgba(40, 40, 42, 0.80);
+  --glass-card-hover-blur: 20px;
+  --glass-overlay-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 
   /* ── Radii ── */
-  --radius-sm: 16px;
-  --radius-md: 18px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
   --radius-lg: 20px;
   --radius-full: 9999px;
 
   /* ── Motion ── */
-  --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 250ms;
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -75,27 +77,26 @@ body {
   margin: 0;
   font-family: var(--font-body);
   font-size: 15px;
-  line-height: 1.65;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   background: var(--bg-canvas);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  min-height: 100vh;
-}
+#root { min-height: 100vh; }
 
 /* ═══════════════════════════════════════════════════════════
-   Scrollbar — thin, translucent
+   Scrollbar — invisible until hover
    ═══════════════════════════════════════════════════════════ */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.20); }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.16); }
 
 /* ═══════════════════════════════════════════════════════════
-   Focus Ring — Apple blue
+   Focus Ring
    ═══════════════════════════════════════════════════════════ */
 *:focus-visible {
   outline: 2px solid var(--accent-brand);
@@ -106,13 +107,17 @@ body {
    Keyframe Animations
    ═══════════════════════════════════════════════════════════ */
 @keyframes slide-up {
-  from { transform: translateY(8px); opacity: 0; }
+  from { transform: translateY(6px); opacity: 0; }
   to   { transform: translateY(0); opacity: 1; }
 }
-
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+@keyframes speaking-marquee {
+  0%   { box-shadow: 0 0 0 0 currentColor; }
+  50%  { box-shadow: 0 0 12px 0 currentColor, 0 0 24px 0 currentColor; }
+  100% { box-shadow: 0 0 0 0 currentColor; }
 }
 
 @keyframes pulse-live {
@@ -120,28 +125,66 @@ body {
   50%      { opacity: 0.5; }
 }
 
-@keyframes glow-brief {
-  0%   { box-shadow: 0 0 0 1px var(--accent-positive); }
-  100% { box-shadow: 0 0 0 1px transparent; }
+/* ═══════════════════════════════════════════════════════════
+   Glass Utilities
+   ═══════════════════════════════════════════════════════════ */
+
+/* Top navbar — strong blur, bright top inner border */
+.glass-nav {
+  background: var(--glass-nav-bg);
+  backdrop-filter: blur(var(--glass-nav-blur)) saturate(180%);
+  -webkit-backdrop-filter: blur(var(--glass-nav-blur)) saturate(180%);
+  border-bottom: 0.5px solid var(--glass-nav-border-bottom);
+  box-shadow: 0 0 0 0.5px var(--glass-nav-border-top) inset;
+}
+
+/* Content card — subtle fill, light blur on hover */
+.glass-card {
+  background: var(--glass-card-bg);
+  backdrop-filter: blur(var(--glass-card-blur));
+  -webkit-backdrop-filter: blur(var(--glass-card-blur));
+  border: 0.5px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  transition: background var(--duration-fast) var(--ease-apple),
+              backdrop-filter var(--duration-fast) var(--ease-apple),
+              transform var(--duration-fast) var(--ease-apple);
+}
+.glass-card:hover {
+  background: var(--glass-card-hover-bg);
+  backdrop-filter: blur(var(--glass-card-hover-blur));
+  -webkit-backdrop-filter: blur(var(--glass-card-hover-blur));
+  transform: scale(1.01);
+}
+
+/* Overlay/float — strong blur, soft shadow */
+.glass-overlay {
+  background: var(--glass-nav-bg);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: var(--glass-overlay-shadow);
+  border: 0.5px solid var(--border-accent);
 }
 
 /* ═══════════════════════════════════════════════════════════
-   Glass Card Utility
+   Typography Utilities
    ═══════════════════════════════════════════════════════════ */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 0.5px solid var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--radius-md);
+.text-heading {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary);
 }
-
-/* Fallback for browsers without backdrop-filter support */
-@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .glass-card {
-    background: rgba(44, 44, 46, 0.92);
-  }
+.text-body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+}
+.text-caption {
+  font-family: var(--font-body);
+  font-weight: 400;
+  color: var(--text-secondary);
 }
 
 /* ═══════════════════════════════════════════════════════════

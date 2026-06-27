@@ -30,23 +30,25 @@ export default function TranscriptPanel({ utterances }: TranscriptPanelProps) {
           <div
             data-testid="utterance-entry"
             key={i}
-            className="p-3 rounded-[16px]"
+            className="p-3.5 rounded-[var(--radius-sm)] mb-3"
             style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: '0.5px solid var(--glass-border)',
-              animation: isLatest ? 'slide-up 250ms var(--ease-out)' : 'none',
+              background: 'var(--glass-card-bg)',
+              backdropFilter: 'blur(var(--glass-card-blur))',
+              WebkitBackdropFilter: 'blur(var(--glass-card-blur))',
+              border: '0.5px solid var(--border-default)',
+              animation: isLatest ? 'slide-up 250ms var(--ease-apple)' : 'none',
             }}
           >
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="text-xs font-semibold"
-                style={{ fontFamily: 'var(--font-heading)', color: hex }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-medium"
+                style={{ color: hex }}>
                 {u.panelistName}
               </span>
-              <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                 {u.panelistTitle}
               </span>
             </div>
-            <p className="text-[14px] leading-relaxed" style={{ color: 'var(--text-primary)' }}>
+            <p className="text-body text-[13px]">
               {u.content}
             </p>
           </div>

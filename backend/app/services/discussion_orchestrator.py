@@ -468,20 +468,27 @@ class DiscussionOrchestrator:
             )},
         ]
 
+        # ── 总结用独立的 chat_completion，不经过 extractor._call_llm ──
+        # extractor._call_llm 强制 response_format="json_object"，但总结需要纯文本
+        from app.llm.client import chat_completion
         try:
-            resp = await self.extractor._call_llm(messages)
+            resp = await chat_completion(messages, temperature=0.5)
             content = resp["choices"][0]["message"]["content"]
-            # Strip any accidental JSON wrapping
             content = content.strip()
-            if content.startswith("{") or content.startswith("```"):
-                # LLM returned JSON instead of plain text — try to extract
+            # 兜底清洗：LLM 可能仍然包裹了 markdown
+            content = content.removeprefix("```json").removeprefix("```").strip()
+            content = content.removesuffix("```").strip()
+            # 如果是纯 JSON 包裹的字符串，尝试解包
+            if content.startswith("{") or content.startswith('"'):
                 try:
                     data = _json.loads(content)
                     if isinstance(data, dict):
                         content = data.get("summary", data.get("content", content))
-                except _json.JSONDecodeError:
-                    content = content.replace("```json", "").replace("```", "").strip()
-            return content
+                    elif isinstance(data, str):
+                        content = data
+                except (_json.JSONDecodeError, TypeError):
+                    pass
+            return content if content else "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流..."
         except Exception as e:
             print(
                 f"[orchestrator] CRITICAL: _generate_summary failed!\n"
@@ -502,7 +509,9 @@ class DiscussionOrchestrator:
                 db, topic, transcript, set(), set(), panelists,
             )
         except Exception as e:
-            print(f"[orchestrator] _generate_summary_safe failed: {e}", flush=True)
+            print(f"[orchestrator] CRITICAL: _generate_summary_safe failed: {type(e).__name__}: {e}", flush=True)
+            import traceback as _tbs
+            _tbs.print_exc()
             return "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流，各方在多个层面达成共识，也存在值得继续探讨的分歧。期待下期再会。"
 
     async def _emit_discussion_end_bulletproof(
@@ -526,7 +535,9 @@ class DiscussionOrchestrator:
                 db, topic, transcript, panelists,
             )
         except Exception as e:
-            print(f"[orchestrator] summary generation failed, using fallback: {e}", flush=True)
+            print(f"[orchestrator] CRITICAL: summary generation FAILED: {type(e).__name__}: {e}", flush=True)
+            import traceback as _tbs2
+            _tbs2.print_exc()
 
         # Step 2: 安全构建 silent_panelists（用 for 循环，绝不抛异常）
         try:

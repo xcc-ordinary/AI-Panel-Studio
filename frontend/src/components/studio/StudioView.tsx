@@ -80,23 +80,11 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
     );
   }
 
-  const glassPanel = {
-    background: 'var(--glass-bg)',
-    backdropFilter: 'blur(var(--glass-blur))',
-    WebkitBackdropFilter: 'blur(var(--glass-blur))',
-  };
-
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-canvas)' }}>
 
-      {/* ── Apple Glass Header ── */}
-      <header
-        className="shrink-0 h-14 flex items-center justify-between px-4"
-        style={{
-          ...glassPanel,
-          borderBottom: '0.5px solid var(--glass-border)',
-        }}
-      >
+      {/* ── Apple Studio Header ── */}
+      <header className="glass-nav shrink-0 h-13 flex items-center justify-between px-5">
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={onBack} className="shrink-0 cursor-pointer transition-opacity duration-[var(--duration-fast)] hover:opacity-80"
             style={{ color: 'var(--text-secondary)' }} aria-label="返回首页">
@@ -131,41 +119,34 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
 
       {/* ── discussion_end banner ── */}
       {discussionEnded && hostSummary && (
-        <div data-testid="discussion-end-banner" className="shrink-0 p-5 mx-4 mt-4 rounded-[var(--radius-lg)]"
-          style={{ ...glassPanel, border: '0.5px solid var(--glass-border)' }}>
+        <div data-testid="discussion-end-banner" className="glass-overlay shrink-0 p-5 mx-5 mt-5 rounded-[var(--radius-lg)]">
           <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>讨论结束 — 主持人总结</p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hostSummary}</p>
         </div>
       )}
 
-      {/* ── Desktop 3-column: glass panels with gap, no harsh dividers ── */}
-      <div className="hidden md:flex flex-1 min-h-0 gap-1 p-1">
-        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
-          style={glassPanel}>
+      {/* ── Desktop 3-column: glass card modules, gap spacing ── */}
+      <div className="hidden md:flex flex-1 min-h-0 gap-3 p-3">
+        <aside className="glass-card flex-1 min-w-0 min-h-0 overflow-y-auto p-5">
           <PanelistGrid panelists={gridPanelists} />
         </aside>
-        <main className="flex-[1.2] min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
-          style={glassPanel}>
-          <h2 className="text-xs font-semibold mb-4 px-1 tracking-wider uppercase"
-            style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-muted)' }}>
+        <main className="glass-card flex-[1.2] min-w-0 min-h-0 overflow-y-auto p-5">
+          <h2 className="text-caption text-[11px] font-medium mb-4 px-1 tracking-wider uppercase">
             现场 Transcript
           </h2>
           <TranscriptPanel utterances={uttEntries} />
         </main>
-        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
-          style={glassPanel}>
+        <aside className="glass-card flex-1 min-w-0 min-h-0 overflow-y-auto p-5">
           <ConsensusPanel consensus={consensusCards} divergences={divergenceCards} />
         </aside>
       </div>
 
       {/* ── Tablet 2-column ── */}
-      <div className="hidden sm:flex md:hidden flex-1 min-h-0 gap-1 p-1">
-        <aside className="w-[200px] shrink-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-3"
-          style={glassPanel}>
+      <div className="hidden sm:flex md:hidden flex-1 min-h-0 gap-3 p-3">
+        <aside className="glass-card w-[200px] shrink-0 min-h-0 overflow-y-auto p-4">
           <PanelistGrid panelists={gridPanelists} />
         </aside>
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col rounded-[var(--radius-lg)]"
-          style={glassPanel}>
+        <div className="glass-card flex-1 min-w-0 min-h-0 flex flex-col">
           <div className="shrink-0 flex" style={{ borderBottom: '0.5px solid var(--glass-border)' }}>
             {(['transcript','consensus'] as const).map(t => (
               <button key={t} onClick={() => setMobileTab(t as 'transcript'|'consensus')}
@@ -189,12 +170,12 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
 
       {/* ── Mobile single-column + bottom tabs ── */}
       <div className="flex sm:hidden flex-1 min-h-0 flex-col p-1">
-        <div className="flex-1 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-3" style={glassPanel}>
+        <div className="glass-card flex-1 min-h-0 overflow-y-auto p-4 m-2">
           {mobileTab === 'panelists' && <PanelistGrid panelists={gridPanelists} />}
           {mobileTab === 'transcript' && <TranscriptPanel utterances={uttEntries} />}
           {mobileTab === 'consensus' && <ConsensusPanel consensus={consensusCards} divergences={divergenceCards} />}
         </div>
-        <nav className="shrink-0 h-12 flex rounded-[var(--radius-lg)] m-1" style={{ ...glassPanel, border: '0.5px solid var(--glass-border)' }}>
+        <nav className="glass-nav shrink-0 h-12 flex rounded-[var(--radius-lg)] mx-2 mb-2">
           {tabDefs.map(t => (
             <button key={t.key} onClick={() => setMobileTab(t.key)}
               className="flex-1 text-[11px] font-medium cursor-pointer"
