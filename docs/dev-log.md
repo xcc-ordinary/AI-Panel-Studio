@@ -1,6 +1,6 @@
 # AI Panel Studio — 开发日志
 
-**最后更新**: 2026-06-27 (§6 指导原则补录) | **分支**: `001-ai-roundtable-discussion`
+**最后更新**: 2026-06-27 (Apple Studio 重设计 + 开场立论 + 反幻觉护栏) | **分支**: `001-ai-roundtable-discussion`
 
 ---
 

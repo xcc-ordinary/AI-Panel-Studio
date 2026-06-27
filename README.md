@@ -147,20 +147,28 @@ DiscussionOrchestrator ──publish()──▶ event 表 (seq 日志)
 chore: init project scaffold
  docs(spec): clarify 5 edge cases
  docs(schema): add data-model, REST/SSE contracts, research & quickstart
- test(api): add discussion CRUD integration tests
- feat(api): implement discussion list/detail/delete with isolation
- test(sse): add SSE stream & reconnection integration tests
- feat(sse): minimal SSE channel with seq-based reconnection
+ docs(schema): finalize PRD, ER diagram, API doc & task breakdown
+ docs(schema): add seed-data task
+ fix(schema): add database layer, divergence_point schema
+ test(api): add discussion CRUD integration tests (list/detail/delete)
+ feat(api): implement discussion list/detail/delete with isolation & N+1 fix
+ test(sse): add SSE stream & reconnection integration tests (live_server)
+ feat(sse): minimal SSE channel with seq-based reconnection (fake source, TODO Phase4)
  fix(sse): drop id field on heartbeat/snapshot to preserve Last-Event-ID
  docs(design): finalize design system; separate identity/semantic colors
  ui-components: home & create-discussion pages aligned to design system
  ui-components: studio three-pane layout + realtime components
+ fix(ui): replace fetchedRef with cancelled flag to fix Strict Mode loading deadlock
  test: panelist generator unit tests (mock LLM, malformed-json retry, diversity)
  feat: panelist generation via DeepSeek with JSON parsing & color assignment
- test: speech scheduler unit tests (non-round-robin, silent detection, max_rounds)
- feat: discussion orchestrator with scheduling + consensus + summary
- fix(ui): replace fetchedRef with cancelled flag to fix Strict Mode loading deadlock
+ test: speech scheduler & SSE manager unit tests (non-round-robin, silent detection, fan-out)
+ feat: discussion orchestrator with speech scheduling + consensus extraction + summary
+ docs: rewrite prompt log, workflow doc, README with real dev process & tabbit principles
  test(e2e): add Playwright E2E specs (full-cycle, delivery, robustness, isolation, reconnect)
+ feat: studio real-time SSE integration, seq dedup, E2E verification & API docs update
+ feat: anti-hallucination guardrails, robust JSON parsing, bulletproof discussion_end
+ feat: opening-statement phase, fallback diversity, JSON mode lockdown, same-speaker prevention
+ feat: Apple Studio redesign (glass-nav, marquee glow), consensus dedup, summary bulletproof
 ```
 
 ## 后续改进方向
