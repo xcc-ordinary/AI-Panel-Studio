@@ -7,7 +7,7 @@ interface DiscussionCardProps {
   onClick: (id: string, topic: string) => void;
 }
 
-/** 按 expert_count 渲染 N 位专家 + 1 位主持人的示意色点。 */
+/** 按 expert_count 渲染 N 位专家 + 1 位主持人的精致色点。 */
 function ColorDots({ count }: { count: number }) {
   return (
     <div className="flex items-center gap-1" aria-hidden="true">
@@ -16,8 +16,8 @@ function ColorDots({ count }: { count: number }) {
         return (
           <span
             key={i}
-            className="inline-block w-2 h-2 rounded-full shrink-0"
-            style={{ background: hex, boxShadow: `0 0 5px ${soft}` }}
+            className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
+            style={{ background: hex, boxShadow: `0 0 4px ${soft}` }}
           />
         );
       })}
@@ -41,25 +41,26 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
       tabIndex={0}
       role="button"
       aria-label={`${discussion.topic}——${discussion.panelist_count || discussion.expert_count + 1}位嘉宾，${isLive ? '进行中' : '已结束'}，第${discussion.current_round}轮`}
-      className="group p-5 rounded-[var(--radius-lg)] border cursor-pointer
+      className="group p-6 rounded-[var(--radius-lg)] cursor-pointer
                  transition-all duration-[var(--duration-fast)]
-                 focus-visible:ring-2 focus-visible:ring-[#E2E8F0] focus-visible:ring-offset-2 focus-visible:ring-offset-[#020617]"
+                 focus-visible:ring-2 focus-visible:ring-[var(--accent-brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-canvas)]"
       style={{
-        background: 'var(--bg-surface)',
-        borderColor: 'var(--border-default)',
+        background: 'var(--glass-bg)',
+        backdropFilter: 'blur(var(--glass-blur))',
+        WebkitBackdropFilter: 'blur(var(--glass-blur))',
+        border: '0.5px solid var(--glass-border)',
+        boxShadow: 'var(--glass-shadow)',
         transform: 'translateY(0)',
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.background = 'var(--bg-elevated)';
-        e.currentTarget.style.borderColor = 'var(--border-accent)';
+        e.currentTarget.style.background = 'var(--glass-bg-hover)';
         e.currentTarget.style.transform = 'translateY(-2px)';
-        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
       }}
       onMouseLeave={e => {
-        e.currentTarget.style.background = 'var(--bg-surface)';
-        e.currentTarget.style.borderColor = 'var(--border-default)';
+        e.currentTarget.style.background = 'var(--glass-bg)';
         e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
+        e.currentTarget.style.boxShadow = 'var(--glass-shadow)';
       }}
     >
       {/* 顶部: 话题 + 状态 */}
@@ -70,18 +71,28 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
         >
           {discussion.topic}
         </h3>
+        {/* Apple 弱化状态标签 */}
         <span
           data-testid="discussion-status-badge"
-          className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium
-            ${isLive ? 'bg-red-500/10 text-red-400' : 'bg-slate-700/40 text-slate-400'}`}
+          className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+          style={{
+            background: isLive ? 'rgba(255,69,58,0.08)' : 'rgba(110,110,115,0.10)',
+            color: isLive ? 'var(--accent-live)' : 'var(--text-muted)',
+          }}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`} />
+          <span
+            className="w-1 h-1 rounded-full"
+            style={{
+              background: isLive ? 'var(--accent-live)' : 'var(--text-muted)',
+              animation: isLive ? 'pulse-live 2s ease-in-out infinite' : 'none',
+            }}
+          />
           {isLive ? '进行中' : isEnded ? '已结束' : '待生成'}
         </span>
       </div>
 
-      {/* 中部: 元信息 + 图标 */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mb-4 text-[13px]"
+      {/* 中部: 元信息 */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 mb-5 text-[13px]"
         style={{ color: 'var(--text-secondary)' }}>
         <span className="inline-flex items-center gap-1.5">
           <Users size={14} strokeWidth={1.5} />
@@ -97,11 +108,13 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
         </span>
       </div>
 
-      {/* 底部: 嘉宾色点 — 九色盘在首页可见 */}
-      <div className="flex items-center justify-between pt-3 border-t"
-        style={{ borderColor: 'var(--border-default)' }}>
+      {/* 底部: 色点 + CTA — 用留白替代分隔线 */}
+      <div className="flex items-center justify-between">
         <ColorDots count={discussion.expert_count} />
-        <span className="text-[11px] font-medium" style={{ color: 'var(--text-muted)' }}>
+        <span
+          className="text-[11px] font-medium transition-opacity duration-[var(--duration-fast)] opacity-50 group-hover:opacity-100"
+          style={{ color: 'var(--text-muted)' }}
+        >
           加入观察 →
         </span>
       </div>

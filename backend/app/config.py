@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     # 讨论并发上限
     max_concurrent_discussions: int = 10
 
-    # 发言调度：最大轮次兜底
-    default_max_rounds: int = 30
+    # 发言调度：适合展示的辩论长度（代码强制跑满此轮数）
+    default_max_rounds: int = 15
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

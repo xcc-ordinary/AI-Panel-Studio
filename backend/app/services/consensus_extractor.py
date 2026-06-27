@@ -3,6 +3,8 @@
 与 SpeechScheduler 相同模式：_call_llm 可被测试 mock。
 """
 import json
+import re
+import traceback
 import uuid
 from datetime import datetime, timezone
 
@@ -23,36 +25,45 @@ class ConsensusExtractor:
         discussion_id: str,
         transcript: list[dict],
         panelists: list[dict],
-        existing_consensus_ids: set[str],
-        existing_divergence_ids: set[str],
+        existing_consensus: list[dict],
+        existing_divergence: list[dict],
     ) -> dict:
         """返回 {"consensus_points": [...], "divergence_points": [...]}。
 
-        每个 point 含 id/content/involved_panelist_ids（consensus）或
-        id/description/camps（divergence），已 ready for DB + SSE publish。
+        existing_consensus: [{"id": str, "content": str}, ...]
+        existing_divergence: [{"id": str, "description": str, "camps": [...]}, ...]
+        传入已有点的完整内容，让 LLM 能做语义级去重（而非仅靠 ID 比对）。
         """
         from app.llm.prompts import CONSENSUS_EXTRACTION_SYSTEM, CONSENSUS_EXTRACTION_USER
 
         # ── Format transcript ───────────────────────────
         transcript_text = self._format_transcript(transcript, panelists)
 
-        # ── Format existing points ──────────────────────
-        existing_text = ""
-        if existing_consensus_ids or existing_divergence_ids:
-            existing_text = f"\n已有的共识ID（不要重复生成）：{', '.join(sorted(existing_consensus_ids))}\n已有的分歧ID（不要重复生成）：{', '.join(sorted(existing_divergence_ids))}\n"
+        # ── Format existing points with CONTENT for semantic dedup ──
+        existing_consensus_text = self._format_existing_consensus(existing_consensus)
+        existing_divergence_text = self._format_existing_divergence(existing_divergence)
 
         messages = [
             {"role": "system", "content": CONSENSUS_EXTRACTION_SYSTEM},
             {"role": "user", "content": CONSENSUS_EXTRACTION_USER.format(
                 transcript=transcript_text,
-                existing=existing_text,
+                existing_consensus=existing_consensus_text,
+                existing_divergence=existing_divergence_text,
             )},
         ]
 
+        raw_content = ""
         try:
             resp = await self._call_llm(messages)
-            content = resp["choices"][0]["message"]["content"]
-            data = json.loads(content)
+            raw_content = resp["choices"][0]["message"]["content"]
+
+            # ── 强力清洗 Markdown 包裹 (正则，不区分大小写) ──
+            cleaned = raw_content.strip()
+            cleaned = re.sub(r'^```(?:json|JSON)?\s*', '', cleaned)
+            cleaned = re.sub(r'\s*```\s*$', '', cleaned)
+            cleaned = cleaned.strip()
+
+            data = json.loads(cleaned)
 
             consensus_points = []
             for cp in data.get("consensus_points", []):
@@ -89,8 +100,40 @@ class ConsensusExtractor:
             }
 
         except (json.JSONDecodeError, KeyError, Exception) as e:
-            print(f"[consensus_extractor] Extraction failed: {e}", flush=True)
+            # Print full context for debugging — never silently swallow extraction failures
+            print(
+                f"[consensus_extractor] Extraction failed!\n"
+                f"  Error: {type(e).__name__}: {e}\n"
+                f"  Traceback:\n{traceback.format_exc()}\n"
+                f"  Raw LLM response (first 500 chars): {raw_content[:500] if raw_content else '(empty)'}",
+                flush=True,
+            )
             return {"consensus_points": [], "divergence_points": []}
+
+    def _format_existing_consensus(self, items: list[dict]) -> str:
+        """将已有共识格式化为 LLM 可做语义比对的文本。"""
+        if not items:
+            return "暂无已有共识"
+        lines = []
+        for i, c in enumerate(items, 1):
+            lines.append(f"{i}. {c.get('content', '')}")
+        return "\n".join(lines)
+
+    def _format_existing_divergence(self, items: list[dict]) -> str:
+        """将已有分歧格式化为 LLM 可做语义比对的文本（含阵营详情）。"""
+        if not items:
+            return "暂无已有分歧"
+        lines = []
+        for i, d in enumerate(items, 1):
+            desc = d.get("description", "")
+            camps = d.get("camps", [])
+            camp_texts = []
+            for camp in camps:
+                pos = camp.get("position", "")
+                camp_texts.append(f"    - {pos}")
+            camp_summary = "\n".join(camp_texts) if camp_texts else "    (无阵营详情)"
+            lines.append(f"{i}. {desc}\n{camp_summary}")
+        return "\n".join(lines)
 
     def _format_transcript(self, transcript: list[dict], panelists: list[dict]) -> str:
         if not transcript:

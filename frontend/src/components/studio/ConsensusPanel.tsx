@@ -1,4 +1,4 @@
-/** MASTER.md §5.4 — 共识与分歧面板: 共识绿描边 + 分歧琥珀描边 + 阵营展示 */
+/** Apple Studio — 共识与分歧面板: 玻璃卡片 + 软色底代替彩色边框 */
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 interface FakeConsensus {
@@ -22,8 +22,8 @@ interface ConsensusPanelProps {
 
 export default function ConsensusPanel({ consensus, divergences }: ConsensusPanelProps) {
   return (
-    <div className="space-y-5 px-1">
-      {/* 已形成共识 */}
+    <div className="space-y-6 px-1">
+      {/* Consensus */}
       <section>
         <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2"
           style={{ color: 'var(--accent-positive)' }}>
@@ -38,11 +38,10 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
             <div
               data-testid="consensus-card"
               key={c.id}
-              className="p-3 rounded-[var(--radius-md)] border transition-all duration-[var(--duration-normal)]"
+              className="p-3 rounded-[16px] border transition-all duration-[var(--duration-normal)]"
               style={{
-                background: 'var(--bg-surface)',
-                borderColor: c.isNew ? 'var(--accent-positive)' : 'var(--border-default)',
-                boxShadow: c.isNew ? '0 0 0 1px var(--accent-positive)' : 'none',
+                background: 'rgba(48,209,88,0.05)',
+                borderColor: c.isNew ? 'rgba(48,209,88,0.20)' : 'var(--glass-border)',
                 animation: c.isNew ? 'glow-brief 250ms ease-out' : 'none',
               }}
             >
@@ -52,7 +51,7 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
               <div className="flex flex-wrap gap-1">
                 {c.involvedNames.map(n => (
                   <span key={n} className="text-[10px] px-1.5 py-px rounded-full"
-                    style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--accent-positive)' }}>
+                    style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)' }}>
                     {n}
                   </span>
                 ))}
@@ -62,7 +61,7 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
         </div>
       </section>
 
-      {/* 存在分歧 */}
+      {/* Divergence */}
       <section>
         <h3 className="text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2"
           style={{ color: 'var(--accent-divergence)' }}>
@@ -77,11 +76,10 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
             <div
               data-testid="divergence-card"
               key={d.id}
-              className="p-3 rounded-[var(--radius-md)] border transition-all duration-[var(--duration-normal)]"
+              className="p-3 rounded-[16px] border transition-all duration-[var(--duration-normal)]"
               style={{
-                background: 'var(--bg-surface)',
-                borderColor: d.isNew ? 'var(--accent-divergence)' : 'var(--border-default)',
-                boxShadow: d.isNew ? '0 0 0 1px var(--accent-divergence)' : 'none',
+                background: 'rgba(255,159,10,0.05)',
+                borderColor: d.isNew ? 'rgba(255,159,10,0.20)' : 'var(--glass-border)',
                 animation: d.isNew ? 'glow-brief 250ms ease-out' : 'none',
               }}
             >
@@ -96,7 +94,7 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
                   <div className="flex flex-wrap gap-1">
                     {camp.names.map(n => (
                       <span key={n} className="text-[10px] px-1.5 py-px rounded-full"
-                        style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--accent-divergence)' }}>
+                        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)' }}>
                         {n}
                       </span>
                     ))}

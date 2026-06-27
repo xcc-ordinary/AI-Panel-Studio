@@ -21,7 +21,7 @@ from app.services.consensus_extractor import ConsensusExtractor
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
-CONSENSUS_INTERVAL = 3  # Extract consensus every N rounds
+CONSENSUS_INTERVAL = 2  # Extract consensus every N rounds (higher frequency for real-time feel)
 
 
 class DiscussionOrchestrator:
@@ -97,24 +97,19 @@ class DiscussionOrchestrator:
               f"round={current_round}/{max_rounds} panelists={len(panelists)}", flush=True)
 
         try:
-            while not self._cancelled:
+            # ── 主循环：只受 max_rounds 控制，LLM 无权提前结束 ──
+            while not self._cancelled and current_round < max_rounds:
                 # ── Load transcript ──────────────────────────
                 transcript = await self._load_transcript(db)
                 panelist_states = self._build_states(panelists, transcript)
 
                 # ── Decide next speaker ────────────────────────
+                # SpeechScheduler 已在代码层剥夺了 LLM 的提前 summary 权：
+                # 在 current_round < max_rounds 时，type="summary" 会被强制覆写为 question。
                 decision = await self.scheduler.decide_next_speaker(
                     self.discussion_id, transcript, panelist_states,
                     current_round, max_rounds,
                 )
-
-                # ── Summary → end discussion ──────────────────
-                if decision["type"] == "summary":
-                    summary = await self._generate_summary(
-                        db, topic, transcript, existing_c_ids, existing_d_ids, panelists,
-                    )
-                    await self._end_discussion(db, summary, current_round, panelist_states)
-                    return
 
                 # ── Persist utterance ─────────────────────────
                 speaker_id = decision["speaker_id"]
@@ -171,21 +166,18 @@ class DiscussionOrchestrator:
                 # ── Pacing between rounds ─────────────────────
                 await asyncio.sleep(2.0)
 
+            # ═══════════════════════════════════════════════════════
+            # 主循环自然结束（current_round >= max_rounds）→ 100% 触发总结
+            # ═══════════════════════════════════════════════════════
+            if not self._cancelled:
+                print(f"[orchestrator] max_rounds reached, generating summary...", flush=True)
+                await self._emit_discussion_end_bulletproof(db, current_round, topic, panelists)
+
         except Exception as exc:
             print(f"[orchestrator] discussion={self.discussion_id} error: {exc}", flush=True)
-            # ── Natural language error summary, no JSON leak ──
-            await publish(self.discussion_id, "discussion_end", {
-                "discussion_id": self.discussion_id,
-                "summary": "讨论因技术原因提前结束，感谢各位专家的参与。请返回首页查看其他讨论。",
-                "total_rounds": current_round,
-                "silent_panelists": [],
-                "ended_at": _now(),
-            })
-            await db.execute(
-                "UPDATE discussion SET status = 'ended', ended_at = ? WHERE id = ?",
-                (_now(), self.discussion_id),
-            )
-            await db.commit()
+            import traceback
+            traceback.print_exc()
+            await self._emit_discussion_end_bulletproof(db, current_round, "（异常结束）", panelists)
         finally:
             print(f"[orchestrator] discussion={self.discussion_id} finished", flush=True)
             _orchestrators.pop(self.discussion_id, None)
@@ -207,6 +199,37 @@ class DiscussionOrchestrator:
             })
         return transcript
 
+    async def _fetch_existing_consensus(self, db) -> list[dict]:
+        """Query all existing consensus points for this discussion (with content)."""
+        rows = await db.execute(
+            "SELECT id, content FROM consensus_point WHERE discussion_id = ?",
+            (self.discussion_id,),
+        )
+        results: list[dict] = []
+        async for r in rows:
+            results.append({"id": r["id"], "content": r["content"]})
+        return results
+
+    async def _fetch_existing_divergence(self, db) -> list[dict]:
+        """Query all existing divergence points for this discussion (with description + camps)."""
+        rows = await db.execute(
+            "SELECT id, description, camps FROM divergence_point WHERE discussion_id = ?",
+            (self.discussion_id,),
+        )
+        results: list[dict] = []
+        async for r in rows:
+            camps = []
+            try:
+                camps = _json.loads(r["camps"]) if r["camps"] else []
+            except (_json.JSONDecodeError, TypeError):
+                camps = []
+            results.append({
+                "id": r["id"],
+                "description": r["description"],
+                "camps": camps,
+            })
+        return results
+
     def _build_states(self, panelists: list[dict], transcript: list[dict]) -> list[dict]:
         states = []
         for p in panelists:
@@ -225,11 +248,20 @@ class DiscussionOrchestrator:
         self, db, transcript: list[dict], panelists: list[dict],
         existing_c_ids: set[str], existing_d_ids: set[str],
     ) -> None:
-        """Call ConsensusExtractor, persist new points, publish SSE events."""
+        """Call ConsensusExtractor, persist new points, publish SSE events.
+
+        Passes existing consensus/divergence **content** (not just IDs) so the LLM can
+        perform semantic dedup — preventing the same debate point from being re-extracted.
+        """
         print(f"[orchestrator] extracting consensus after {len(transcript)} utterances...", flush=True)
+
+        # Fetch existing content for semantic dedup (on top of ID-based dedup)
+        existing_consensus = await self._fetch_existing_consensus(db)
+        existing_divergence = await self._fetch_existing_divergence(db)
+
         result = await self.extractor.extract(
             self.discussion_id, transcript, panelists,
-            existing_c_ids, existing_d_ids,
+            existing_consensus, existing_divergence,
         )
         print(f"[orchestrator] consensus result: c={len(result.get('consensus_points',[]))} d={len(result.get('divergence_points',[]))}", flush=True)
 
@@ -324,23 +356,87 @@ class DiscussionOrchestrator:
             print(f"[orchestrator] Summary generation failed: {e}", flush=True)
             return "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流，各方在多个层面达成共识，也存在值得继续探讨的分歧。期待下期再会。"
 
-    async def _end_discussion(self, db, summary: str, total_rounds: int,
-                              states: list[dict]) -> None:
-        silent = [s for s in states if s.get("silent_rounds", 0) >= 5]
+    async def _generate_summary_safe(
+        self, db, topic: str, transcript: list[dict], panelists: list[dict],
+    ) -> str:
+        """100% 可靠的总结生成——无论 LLM 是否成功，始终返回自然语言文本。"""
+        try:
+            return await self._generate_summary(
+                db, topic, transcript, set(), set(), panelists,
+            )
+        except Exception as e:
+            print(f"[orchestrator] _generate_summary_safe failed: {e}", flush=True)
+            return "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流，各方在多个层面达成共识，也存在值得继续探讨的分歧。期待下期再会。"
 
-        await db.execute(
-            "UPDATE discussion SET status = 'ended', ended_at = ? WHERE id = ?",
-            (_now(), self.discussion_id),
-        )
-        await db.commit()
+    async def _emit_discussion_end_bulletproof(
+        self, db, total_rounds: int, topic: str, panelists: list[dict],
+    ) -> None:
+        """终极安全网：无论如何都要把 discussion_end 发出去。
 
-        await publish(self.discussion_id, "discussion_end", {
-            "discussion_id": self.discussion_id,
-            "summary": summary,
-            "total_rounds": total_rounds,
-            "silent_panelists": [{"id": s["id"], "name": s["name"]} for s in silent],
-            "ended_at": _now(),
-        })
+        先尝试正常生成总结 → 失败则用兜底文案。
+        整个 publish + DB 更新包裹在独立 try-except 中，
+        即使 silent_panelists 列表推导式炸了也不影响事件发送。
+        """
+        import traceback as _tb
+
+        summary = "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流，各方在多个层面达成共识，也存在值得继续探讨的分歧。期待下期再会。"
+        silent_panelists: list[dict] = []
+
+        # Step 1: 尝试正常生成总结（可能因 LLM 调用失败）
+        try:
+            transcript = await self._load_transcript(db)
+            summary = await self._generate_summary_safe(
+                db, topic, transcript, panelists,
+            )
+        except Exception as e:
+            print(f"[orchestrator] summary generation failed, using fallback: {e}", flush=True)
+
+        # Step 2: 安全构建 silent_panelists（列表推导式可能炸）
+        try:
+            final_transcript = await self._load_transcript(db)
+            states = self._build_states(panelists, final_transcript)
+            silent_panelists = [
+                {"id": s["id"], "name": s.get("name", "?")}
+                for s in states
+                if s.get("silent_rounds", 0) >= 5
+            ]
+        except Exception as e:
+            print(f"[orchestrator] building silent_panelists failed: {e}", flush=True)
+            silent_panelists = []
+
+        # Step 3: 发布 discussion_end（必须成功——这是前端浮层的触发器）
+        try:
+            await publish(self.discussion_id, "discussion_end", {
+                "discussion_id": self.discussion_id,
+                "summary": summary,
+                "total_rounds": total_rounds,
+                "silent_panelists": silent_panelists,
+                "ended_at": _now(),
+            })
+        except Exception as e:
+            print(f"[orchestrator] CRITICAL: publish discussion_end failed: {e}", flush=True)
+            _tb.print_exc()
+            # 最坏情况——连 publish 都失败了——尝试裸 publish
+            try:
+                await publish(self.discussion_id, "discussion_end", {
+                    "discussion_id": self.discussion_id,
+                    "summary": "本场圆桌讨论已结束。",
+                    "total_rounds": total_rounds,
+                    "silent_panelists": [],
+                    "ended_at": _now(),
+                })
+            except Exception:
+                print(f"[orchestrator] FATAL: even bare publish failed", flush=True)
+
+        # Step 4: 更新 DB 状态为 ended（独立 try，不因 DB 错误影响前端通知）
+        try:
+            await db.execute(
+                "UPDATE discussion SET status = 'ended', ended_at = ? WHERE id = ?",
+                (_now(), self.discussion_id),
+            )
+            await db.commit()
+        except Exception as e:
+            print(f"[orchestrator] updating discussion status failed: {e}", flush=True)
 
 
 # ── Module-level orchestrator registry ───────────────────────────

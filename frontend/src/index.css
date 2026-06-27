@@ -1,38 +1,66 @@
 @import "tailwindcss";
 
-/* ── MASTER.md §1.3 CSS 变量 ─────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Apple Studio Design System — Tailwind v4 @theme
+   ═══════════════════════════════════════════════════════════ */
 @theme {
-  --color-panelist-0: #38BDF8;
-  --color-panelist-1: #F87171;
-  --color-panelist-2: #818CF8;
-  --color-panelist-3: #FBBF24;
+  --color-panelist-0: #64D2FF;
+  --color-panelist-1: #FF6961;
+  --color-panelist-2: #7D8FFF;
+  --color-panelist-3: #FFD426;
   --color-panelist-4: #A78BFA;
-  --color-panelist-5: #FB923C;
-  --color-panelist-6: #E879F9;
-  --color-panelist-7: #2DD4BF;
-  --color-panelist-8: #FCA5A5;
-  --color-accent-positive: #22C55E;
-  --color-accent-divergence: #F59E0B;
-  --color-accent-live: #EF4444;
-  --font-heading: 'Poppins', 'Noto Sans SC', sans-serif;
-  --font-body: 'Poppins', 'Noto Sans SC', sans-serif;
+  --color-panelist-5: #FF9F4A;
+  --color-panelist-6: #F58FE6;
+  --color-panelist-7: #40D4C4;
+  --color-panelist-8: #FFAAA5;
+  --color-accent-brand: #0A84FF;
+  --color-accent-positive: #30D158;
+  --color-accent-divergence: #FF9F0A;
+  --color-accent-live: #FF453A;
+  --font-heading: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', Consolas, monospace;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   Design Tokens — Apple Studio Palette
+   ═══════════════════════════════════════════════════════════ */
 :root {
-  --bg-canvas: #020617;
-  --bg-surface: #0F172A;
-  --bg-elevated: #1E293B;
-  --bg-raised: #334155;
-  --text-primary: #F8FAFC;
-  --text-secondary: #94A3B8;
-  --text-muted: #64748B;
-  --border-default: #1E293B;
-  --border-accent: #334155;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  /* ── Background hierarchy ── */
+  --bg-canvas: #1C1C1E;                       /* Apple deep charcoal */
+  --bg-surface: rgba(44, 44, 46, 0.70);       /* glass base */
+  --bg-elevated: rgba(58, 58, 60, 0.75);      /* glass elevated */
+  --bg-raised: rgba(72, 72, 74, 0.65);        /* glass raised (inputs/chips) */
+
+  /* ── Text ── */
+  --text-primary: #F5F5F7;                    /* Apple primary label */
+  --text-secondary: #A1A1A6;                  /* Apple secondary label */
+  --text-muted: #6E6E73;                      /* Apple tertiary label */
+
+  /* ── Borders ── */
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-accent: rgba(255, 255, 255, 0.14);
+
+  /* ── Semantic accents ── */
+  --accent-brand: #0A84FF;                    /* Apple system blue */
+  --accent-positive: #30D158;                 /* Apple system green */
+  --accent-divergence: #FF9F0A;               /* Apple system orange */
+  --accent-live: #FF453A;                     /* Apple system red */
+
+  /* ── Glass material tokens ── */
+  --glass-bg: rgba(44, 44, 46, 0.60);
+  --glass-bg-hover: rgba(58, 58, 60, 0.70);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --glass-blur: 16px;
+  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  /* ── Radii ── */
+  --radius-sm: 16px;
+  --radius-md: 18px;
+  --radius-lg: 20px;
   --radius-full: 9999px;
+
+  /* ── Motion ── */
   --duration-fast: 150ms;
   --duration-normal: 200ms;
   --duration-slow: 300ms;
@@ -40,7 +68,9 @@
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
-/* ── 全局重置 ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Global Reset
+   ═══════════════════════════════════════════════════════════ */
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -56,20 +86,67 @@ body {
   min-height: 100vh;
 }
 
-/* ── 滚动条 ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Scrollbar — thin, translucent
+   ═══════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg-raised); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.20); }
 
-/* ── 焦点环 ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Focus Ring — Apple blue
+   ═══════════════════════════════════════════════════════════ */
 *:focus-visible {
-  outline: none;
-  ring: 2px solid #E2E8F0;
-  ring-offset: 2px;
+  outline: 2px solid var(--accent-brand);
+  outline-offset: 2px;
 }
 
-/* ── 动效: prefers-reduced-motion ──────────────────────── */
+/* ═══════════════════════════════════════════════════════════
+   Keyframe Animations
+   ═══════════════════════════════════════════════════════════ */
+@keyframes slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
+}
+
+@keyframes glow-brief {
+  0%   { box-shadow: 0 0 0 1px var(--accent-positive); }
+  100% { box-shadow: 0 0 0 1px transparent; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Glass Card Utility
+   ═══════════════════════════════════════════════════════════ */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-md);
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .glass-card {
+    background: rgba(44, 44, 46, 0.92);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Reduced Motion
+   ═══════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -1,5 +1,6 @@
-/** MASTER.md §5.3 — 现场 Transcript: 嘉宾色左边框 + 姓名/Title/内容 + 最新条 slide-up */
+/** Apple Studio — 现场 Transcript: 四面圆角玻璃气泡 + 发言人名字保留彩色 */
 import { useEffect, useRef } from 'react';
+import { getColor } from '../../utils/colors';
 
 interface FakeUtterance {
   panelistName: string;
@@ -20,28 +21,25 @@ export default function TranscriptPanel({ utterances }: TranscriptPanelProps) {
   }, [utterances]);
 
   return (
-    <div className="space-y-1 px-1">
+    <div className="space-y-3 px-1">
       {utterances.map((u, i) => {
-        const colorHex = [
-          '#38BDF8','#F87171','#818CF8','#FBBF24','#A78BFA',
-          '#FB923C','#E879F9','#2DD4BF','#FCA5A5',
-        ][u.colorIndex % 9];
+        const { hex } = getColor(u.colorIndex);
         const isLatest = i === utterances.length - 1;
 
         return (
           <div
             data-testid="utterance-entry"
             key={i}
-            className="p-2.5 rounded-r-[var(--radius-sm)] mb-1"
+            className="p-3 rounded-[16px]"
             style={{
-              background: 'var(--bg-surface)',
-              borderLeft: `3px solid ${colorHex}`,
+              background: 'rgba(255,255,255,0.04)',
+              border: '0.5px solid var(--glass-border)',
               animation: isLatest ? 'slide-up 250ms var(--ease-out)' : 'none',
             }}
           >
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1.5">
               <span className="text-xs font-semibold"
-                style={{ fontFamily: 'var(--font-heading)', color: colorHex }}>
+                style={{ fontFamily: 'var(--font-heading)', color: hex }}>
                 {u.panelistName}
               </span>
               <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>

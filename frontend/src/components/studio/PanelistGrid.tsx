@@ -1,4 +1,4 @@
-/** 嘉宾网格: 主持人置顶突出，专家网格排列 */
+/** Apple Studio — 嘉宾网格: 主持人置顶突出，专家网格排列 */
 import { Crown } from 'lucide-react';
 import PanelistWindow from './PanelistWindow';
 import type { PanelistStatus } from '../../types';
@@ -22,7 +22,6 @@ export default function PanelistGrid({ panelists }: PanelistGridProps) {
 
   return (
     <div className="space-y-4">
-      {/* 主持人区 */}
       {host && (
         <div data-testid="host-section">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5"
@@ -33,14 +32,13 @@ export default function PanelistGrid({ panelists }: PanelistGridProps) {
         </div>
       )}
 
-      {/* 专家区 */}
       {experts.length > 0 && (
         <div data-testid="experts-section">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1"
             style={{ color: 'var(--text-muted)' }}>
             专家 · {experts.length} 人
           </p>
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {experts.map(p => (
               <PanelistWindow key={p.name} panelist={p} />
             ))}

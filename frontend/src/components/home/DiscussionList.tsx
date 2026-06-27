@@ -34,9 +34,9 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
   }, []);
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
-      {/* 顶部操作栏 */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-[1400px] mx-auto px-6 sm:px-8 py-12">
+      {/* Top bar */}
+      <div className="flex items-center justify-between mb-10">
         <div>
           <h1
             className="text-[28px] font-bold mb-1 tracking-tight"
@@ -54,18 +54,19 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
           data-testid="create-discussion-btn"
           onClick={onCreateNew}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold cursor-pointer
-                     transition-all duration-[var(--duration-fast)]
-                     border hover:shadow-[0_0_20px_rgba(226,232,240,0.15)]"
+                     transition-all duration-[var(--duration-fast)]"
           style={{
-            background: 'var(--bg-surface)',
-            borderColor: '#E2E8F0',
-            color: '#E2E8F0',
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(var(--glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur))',
+            border: '0.5px solid var(--glass-border)',
+            color: 'var(--accent-brand)',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'var(--bg-elevated)';
+            e.currentTarget.style.background = 'var(--glass-bg-hover)';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'var(--bg-surface)';
+            e.currentTarget.style.background = 'var(--glass-bg)';
           }}
         >
           <Plus size={16} strokeWidth={2} />
@@ -73,21 +74,21 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
         </button>
       </div>
 
-      {/* 错误 */}
+      {/* Error */}
       {error && (
         <div
-          className="p-4 rounded-lg mb-6 text-sm flex items-center justify-between"
-          style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}
+          className="p-4 rounded-[16px] mb-6 text-sm flex items-center justify-between"
+          style={{ background: 'rgba(255,69,58,0.08)', color: 'var(--accent-live)' }}
         >
           <span>{error}</span>
           <button onClick={() => window.location.reload()} className="underline cursor-pointer">重试</button>
         </div>
       )}
 
-      {/* 加载态 */}
+      {/* Loading */}
       {loading && <LoadingSkeleton lines={4} withCircle />}
 
-      {/* 空态 */}
+      {/* Empty */}
       {!loading && !error && data && data.discussions.length === 0 && (
         <EmptyState
           message="还没有讨论，发起第一场吧"
@@ -96,9 +97,9 @@ export default function DiscussionList({ onCreateNew, onJoin }: DiscussionListPr
         />
       )}
 
-      {/* 卡片网格 — 桌面 3 列 / 平板 2 列 / 窄屏 1 列 */}
+      {/* Card grid */}
       {!loading && data && data.discussions.length > 0 && (
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {data.discussions.map(d => (
             <DiscussionCard key={d.id} discussion={d} onClick={(id, topic) => onJoin(id, topic)} />
           ))}

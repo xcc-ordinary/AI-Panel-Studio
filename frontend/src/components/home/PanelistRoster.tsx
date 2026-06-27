@@ -46,14 +46,13 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
   }
 
   if (loading) return (
-    <div className="max-w-[720px] mx-auto px-4 py-10">
+    <div className="max-w-[720px] mx-auto px-4 py-12">
       <LoadingSkeleton lines={6} withCircle />
     </div>
   );
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-10">
-      {/* 返回 */}
+    <div className="max-w-[720px] mx-auto px-4 py-12">
       <button
         data-testid="roster-back-btn"
         onClick={onBackToCreate}
@@ -66,7 +65,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
       </button>
 
       <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-        style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', width: 'fit-content' }}>
+        style={{ background: 'rgba(10,132,255,0.08)', color: 'var(--accent-brand)', width: 'fit-content' }}>
         <Sparkles size={12} />
         嘉宾阵容
       </div>
@@ -79,19 +78,26 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
         话题：{data.topic}
       </p>
 
-      {/* 表单卡片 */}
-      <div className="p-6 rounded-[var(--radius-lg)] border mb-8"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
-
-        {/* 主持人 */}
+      {/* Glass card */}
+      <div
+        className="p-6 rounded-[var(--radius-lg)] mb-8"
+        style={{
+          background: 'var(--glass-bg)',
+          backdropFilter: 'blur(var(--glass-blur))',
+          WebkitBackdropFilter: 'blur(var(--glass-blur))',
+          border: '0.5px solid var(--glass-border)',
+          boxShadow: 'var(--glass-shadow)',
+        }}
+      >
+        {/* Host */}
         {host && (
           <div className="mb-6">
             <p className="text-[11px] font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5"
               style={{ color: 'var(--text-muted)' }}>
               <Crown size={12} /> 主持人
             </p>
-            <div className="flex items-start gap-4 p-4 rounded-[var(--radius-md)]"
-              style={{ background: 'var(--bg-elevated)' }}>
+            <div className="flex items-start gap-4 p-4 rounded-[16px]"
+              style={{ background: 'rgba(255,255,255,0.03)' }}>
               <ColorBadge colorIndex={host.sort_order} size="md" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -107,18 +113,16 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
           </div>
         )}
 
-        {/* 专家列表 */}
+        {/* Experts */}
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3"
-            style={{ color: 'var(--text-muted)' }}>
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-muted)' }}>
             专家 · {experts.length} 人
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             {experts.map(p => (
               <div key={p.id}
-                className="flex items-start gap-3 p-4 rounded-[var(--radius-md)]
-                           transition-colors duration-[var(--duration-fast)]"
-                style={{ background: 'var(--bg-elevated)' }}>
+                className="flex items-start gap-3 p-4 rounded-[16px] transition-colors duration-[var(--duration-fast)]"
+                style={{ background: 'rgba(255,255,255,0.03)' }}>
                 <ColorBadge colorIndex={p.sort_order} size="md" />
                 <div className="flex-1 min-w-0">
                   <span className="font-semibold text-sm block mb-0.5"
@@ -136,25 +140,28 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
         </div>
       </div>
 
-      {/* 错误 */}
+      {/* Error */}
       {error && (
-        <div className="p-3 rounded-lg text-sm mb-4"
-          style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>{error}</div>
+        <div className="p-3 rounded-[16px] text-sm mb-4"
+          style={{ background: 'rgba(255,69,58,0.08)', color: 'var(--accent-live)' }}>{error}</div>
       )}
 
-      {/* 操作按钮 */}
+      {/* Actions */}
       <div className="flex gap-3">
         <button
           data-testid="regenerate-btn"
           onClick={handleRegenerate}
-          className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]
-                     text-sm font-medium cursor-pointer transition-all duration-[var(--duration-fast)]
-                     border hover:bg-[var(--bg-elevated)]"
+          className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-[16px]
+                     text-sm font-medium cursor-pointer transition-all duration-[var(--duration-fast)]"
           style={{
-            background: 'var(--bg-surface)',
-            borderColor: 'var(--border-accent)',
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(var(--glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur))',
+            border: '0.5px solid var(--glass-border)',
             color: 'var(--text-primary)',
           }}
+          onMouseEnter={e => { e.currentTarget.style.background = 'var(--glass-bg-hover)'; }}
+          onMouseLeave={e => { e.currentTarget.style.background = 'var(--glass-bg)'; }}
         >
           <RefreshCw size={15} strokeWidth={1.5} />
           重新生成
@@ -162,10 +169,9 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
         <button
           data-testid="confirm-roster-btn"
           onClick={handleConfirm}
-          className="flex-[2] inline-flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]
-                     text-sm font-semibold cursor-pointer transition-all duration-[var(--duration-fast)]
-                     hover:shadow-[0_0_24px_rgba(226,232,240,0.12)]"
-          style={{ background: 'var(--text-primary)', color: 'var(--bg-canvas)' }}
+          className="flex-[2] inline-flex items-center justify-center gap-2 py-3 rounded-[16px]
+                     text-sm font-semibold cursor-pointer transition-all duration-[var(--duration-fast)]"
+          style={{ background: 'var(--accent-brand)', color: '#FFFFFF' }}
         >
           <CheckCircle size={16} />
           确认阵容，进入演播厅

@@ -1,20 +1,20 @@
 /**
- * 9 色嘉宾专属调色板 —— 与 design-system/MASTER.md §1.2 完全一致。
+ * 9 色嘉宾专属调色板 — Apple Studio 去饱和版。
  *
  * 分配规则: color_index = panelist.sort_order，不可重复。主持人始终 0 号色。
- * 语义色独占: 绿(#22C55E)=共识, 琥珀(#F59E0B)=分歧, 红(#EF4444)=直播指示器——嘉宾色不占用。
+ * 语义色独占: 绿(#30D158)=共识, 橙(#FF9F0A)=分歧, 红(#FF453A)=直播指示器——嘉宾色不占用。
  */
 
 export const PANELIST_COLORS: Record<number, { hex: string; soft: string }> = {
-  0: { hex: '#38BDF8', soft: 'rgba(56, 189, 248, 0.30)' },   // 天空蓝 — 主持人
-  1: { hex: '#F87171', soft: 'rgba(248, 113, 113, 0.30)' },   // 珊瑚红
-  2: { hex: '#818CF8', soft: 'rgba(129, 140, 248, 0.30)' },   // 靛蓝
-  3: { hex: '#FBBF24', soft: 'rgba(251, 191, 36, 0.30)' },    // 琥珀金
-  4: { hex: '#A78BFA', soft: 'rgba(167, 139, 250, 0.30)' },   // 紫罗兰
-  5: { hex: '#FB923C', soft: 'rgba(251, 146, 60, 0.30)' },    // 活力橙
-  6: { hex: '#E879F9', soft: 'rgba(232, 121, 249, 0.30)' },   // 品红
-  7: { hex: '#2DD4BF', soft: 'rgba(45, 212, 191, 0.30)' },    // 青碧绿
-  8: { hex: '#FCA5A5', soft: 'rgba(252, 165, 165, 0.30)' },   // 浅珊瑚
+  0: { hex: '#64D2FF', soft: 'rgba(100, 210, 255, 0.25)' },   // 天空蓝 — 主持人
+  1: { hex: '#FF6961', soft: 'rgba(255, 105, 97, 0.25)' },     // 珊瑚红
+  2: { hex: '#7D8FFF', soft: 'rgba(125, 143, 255, 0.25)' },    // 靛蓝
+  3: { hex: '#FFD426', soft: 'rgba(255, 212, 38, 0.25)' },     // 琥珀金
+  4: { hex: '#A78BFA', soft: 'rgba(167, 139, 250, 0.25)' },    // 紫罗兰
+  5: { hex: '#FF9F4A', soft: 'rgba(255, 159, 74, 0.25)' },     // 活力橙
+  6: { hex: '#F58FE6', soft: 'rgba(245, 143, 230, 0.25)' },    // 品红
+  7: { hex: '#40D4C4', soft: 'rgba(64, 212, 196, 0.25)' },     // 青碧绿
+  8: { hex: '#FFAAA5', soft: 'rgba(255, 170, 165, 0.25)' },    // 浅珊瑚
 };
 
 const TOTAL = Object.keys(PANELIST_COLORS).length;
@@ -27,16 +27,16 @@ export function getColor(index: number): { hex: string; soft: string } {
 }
 
 /**
- * 语义色 —— 不与嘉宾调色板重叠。
+ * 语义色 — Apple 系统色，不与嘉宾调色板重叠。
  * 颜色选取见 design-system/MASTER.md §1.1。
  */
 export const SEMANTIC_COLORS = {
-  /** 共识达成 (#22C55E) —— 嘉宾色中无绿，被共识独占 */
-  consensus: '#22C55E',
-  /** 分歧 (#F59E0B) —— 琥珀，全界面统一使用 */
-  divergence: '#F59E0B',
-  /** 直播指示器 (#EF4444) —— 唯一红色场景 */
-  live: '#EF4444',
-  /** 品牌焦点环 (#E2E8F0) —— 亮灰中性，不与嘉宾色冲突 */
-  brand: '#E2E8F0',
+  /** 共识达成 (#30D158) — Apple 系统绿，嘉宾色中无绿，被共识独占 */
+  consensus: '#30D158',
+  /** 分歧 (#FF9F0A) — Apple 系统橙，全界面统一使用 */
+  divergence: '#FF9F0A',
+  /** 直播指示器 (#FF453A) — Apple 系统红，唯一红色场景 */
+  live: '#FF453A',
+  /** 品牌交互色 (#0A84FF) — Apple 系统蓝 */
+  brand: '#0A84FF',
 } as const;

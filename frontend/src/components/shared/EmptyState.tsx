@@ -11,7 +11,7 @@ export default function EmptyState({ message, actionLabel, onAction }: EmptyStat
       role="status"
     >
       <svg
-        className="w-16 h-16 mb-4 opacity-30"
+        className="w-16 h-16 mb-4 opacity-20"
         viewBox="0 0 64 64"
         fill="none"
         stroke="currentColor"
@@ -29,14 +29,17 @@ export default function EmptyState({ message, actionLabel, onAction }: EmptyStat
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="px-6 py-2.5 rounded-lg text-sm font-medium cursor-pointer
-                     transition-colors duration-[var(--duration-fast)]"
+          className="px-6 py-2.5 rounded-[16px] text-sm font-medium cursor-pointer
+                     transition-all duration-[var(--duration-fast)]"
           style={{
-            background: 'var(--bg-raised)',
+            background: 'var(--glass-bg)',
+            backdropFilter: 'blur(var(--glass-blur))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur))',
+            border: '0.5px solid var(--glass-border)',
             color: 'var(--text-primary)',
           }}
-          onMouseEnter={e => (e.currentTarget.style.background = 'var(--border-accent)')}
-          onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-raised)')}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--glass-bg-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'var(--glass-bg)')}
         >
           {actionLabel}
         </button>

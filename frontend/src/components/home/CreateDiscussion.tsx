@@ -37,8 +37,8 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
   }
 
   return (
-    <div className="max-w-[720px] mx-auto px-4 py-10">
-      {/* 返回 */}
+    <div className="max-w-[720px] mx-auto px-4 py-12">
+      {/* Back */}
       <button
         onClick={onBack}
         className="inline-flex items-center gap-1.5 text-sm mb-8 cursor-pointer
@@ -49,12 +49,11 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
         返回首页
       </button>
 
-      {/* 氛围文案 + 表单卡片 并排 */}
       <div className="grid gap-8 lg:grid-cols-5">
-        {/* 左侧氛围文案 — 桌面 2/5 列 */}
+        {/* Left: copy */}
         <div className="lg:col-span-2 flex flex-col justify-center">
           <div className="mb-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium"
-            style={{ background: 'rgba(56,189,248,0.1)', color: '#38BDF8', width: 'fit-content' }}>
+            style={{ background: 'rgba(10,132,255,0.08)', color: 'var(--accent-brand)', width: 'fit-content' }}>
             <Sparkles size={12} />
             演播厅
           </div>
@@ -80,20 +79,23 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
           </div>
         </div>
 
-        {/* 右侧表单卡片 — 桌面 3/5 列 */}
+        {/* Right: form card — glass */}
         <div className="lg:col-span-3">
           <div
-            className="p-6 rounded-[var(--radius-lg)] border"
+            className="p-6 rounded-[var(--radius-lg)]"
             style={{
-              background: 'var(--bg-surface)',
-              borderColor: 'var(--border-default)',
+              background: 'var(--glass-bg)',
+              backdropFilter: 'blur(var(--glass-blur))',
+              WebkitBackdropFilter: 'blur(var(--glass-blur))',
+              border: '0.5px solid var(--glass-border)',
+              boxShadow: 'var(--glass-shadow)',
             }}
           >
             {loading ? (
               <LoadingSkeleton lines={5} withCircle />
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
-                {/* 话题输入 */}
+                {/* Topic */}
                 <div>
                   <label
                     htmlFor="topic"
@@ -111,12 +113,12 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                     maxLength={200}
                     rows={3}
                     autoFocus
-                    className="w-full px-4 py-3 rounded-[var(--radius-md)] text-[15px] leading-relaxed resize-none
-                               border transition-all duration-[var(--duration-fast)]
-                               focus:outline-none focus:ring-2 focus:ring-[#E2E8F0] focus:ring-offset-2 focus:ring-offset-[#020617]"
+                    className="w-full px-4 py-3 rounded-[16px] text-[15px] leading-relaxed resize-none
+                               transition-all duration-[var(--duration-fast)]
+                               focus:outline-none focus:ring-2 focus:ring-[var(--accent-brand)] focus:ring-offset-2 focus:ring-offset-[var(--bg-canvas)]"
                     style={{
-                      background: 'var(--bg-raised)',
-                      borderColor: 'var(--border-accent)',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: '0.5px solid var(--glass-border)',
                       color: 'var(--text-primary)',
                       fontFamily: 'var(--font-body)',
                     }}
@@ -126,7 +128,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                   </p>
                 </div>
 
-                {/* 专家人数 */}
+                {/* Expert count */}
                 <div>
                   <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                     专家人数
@@ -137,10 +139,9 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                       type="button"
                       onClick={() => setExpertCount(c => Math.max(MIN_EXPERTS, c - 1))}
                       disabled={expertCount <= MIN_EXPERTS}
-                      className="w-10 h-10 rounded-[var(--radius-sm)] text-lg font-medium cursor-pointer
-                                 transition-all duration-[var(--duration-fast)] disabled:opacity-30
-                                 hover:bg-[var(--border-accent)]"
-                      style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}
+                      className="w-10 h-10 rounded-[16px] text-lg font-medium cursor-pointer
+                                 transition-all duration-[var(--duration-fast)] disabled:opacity-30"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)' }}
                     >
                       −
                     </button>
@@ -153,10 +154,9 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                       type="button"
                       onClick={() => setExpertCount(c => Math.min(MAX_EXPERTS, c + 1))}
                       disabled={expertCount >= MAX_EXPERTS}
-                      className="w-10 h-10 rounded-[var(--radius-sm)] text-lg font-medium cursor-pointer
-                                 transition-all duration-[var(--duration-fast)] disabled:opacity-30
-                                 hover:bg-[var(--border-accent)]"
-                      style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}
+                      className="w-10 h-10 rounded-[16px] text-lg font-medium cursor-pointer
+                                 transition-all duration-[var(--duration-fast)] disabled:opacity-30"
+                      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-primary)' }}
                     >
                       +
                     </button>
@@ -169,26 +169,25 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                   </p>
                 </div>
 
-                {/* 错误 */}
+                {/* Error */}
                 {error && (
-                  <div data-testid="create-error" className="p-3 rounded-lg text-sm"
-                    style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
+                  <div data-testid="create-error" className="p-3 rounded-[16px] text-sm"
+                    style={{ background: 'rgba(255,69,58,0.08)', color: 'var(--accent-live)' }}>
                     {error}
                   </div>
                 )}
 
-                {/* 提交按钮 */}
+                {/* Submit — Apple blue filled */}
                 <button
                   data-testid="generate-panelists-btn"
                   type="submit"
                   disabled={!canSubmit}
-                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold
+                  className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-[16px] text-sm font-semibold
                              cursor-pointer transition-all duration-[var(--duration-fast)]
-                             disabled:opacity-30 disabled:cursor-not-allowed
-                             hover:shadow-[0_0_24px_rgba(226,232,240,0.12)]"
+                             disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{
-                    background: canSubmit ? 'var(--text-primary)' : 'var(--bg-raised)',
-                    color: canSubmit ? 'var(--bg-canvas)' : 'var(--text-muted)',
+                    background: canSubmit ? 'var(--accent-brand)' : 'rgba(255,255,255,0.06)',
+                    color: canSubmit ? '#FFFFFF' : 'var(--text-muted)',
                   }}
                 >
                   <Sparkles size={16} />

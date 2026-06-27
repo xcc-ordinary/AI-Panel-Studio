@@ -19,7 +19,6 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
   const { panelists, utterances, consensus, divergences, loading, error, isConnected, discussionEnded, hostSummary } =
     useDiscussion(discussionId);
 
-  // ── 转换为子组件所需格式 ──────────────────────
   const gridPanelists = useMemo(() => panelists.map(p => ({
     name: p.name,
     title: p.title,
@@ -63,9 +62,6 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
     { key: 'consensus', label: '共识' },
   ];
 
-  const panelProps = { scrollbarWidth: 'thin' as const, scrollbarColor: 'var(--bg-raised) transparent' as const };
-
-  // ── 加载态 / 错误态 ────────────────────────────
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-canvas)' }}>
@@ -78,18 +74,29 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
     return (
       <div className="flex flex-col items-center justify-center h-screen gap-4" style={{ background: 'var(--bg-canvas)' }}>
         <p style={{ color: 'var(--accent-live)' }}>{error}</p>
-        <button onClick={onBack} className="px-4 py-2 rounded-lg text-sm cursor-pointer"
-          style={{ background: 'var(--bg-raised)', color: 'var(--text-primary)' }}>返回首页</button>
+        <button onClick={onBack} className="px-4 py-2 rounded-[16px] text-sm cursor-pointer"
+          style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}>返回首页</button>
       </div>
     );
   }
 
+  const glassPanel = {
+    background: 'var(--glass-bg)',
+    backdropFilter: 'blur(var(--glass-blur))',
+    WebkitBackdropFilter: 'blur(var(--glass-blur))',
+  };
+
   return (
     <div className="flex flex-col h-screen overflow-hidden" style={{ background: 'var(--bg-canvas)' }}>
 
-      {/* ── 顶部栏 ──────────────────────────────── */}
-      <header className="shrink-0 h-14 flex items-center justify-between px-4 border-b"
-        style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+      {/* ── Apple Glass Header ── */}
+      <header
+        className="shrink-0 h-14 flex items-center justify-between px-4"
+        style={{
+          ...glassPanel,
+          borderBottom: '0.5px solid var(--glass-border)',
+        }}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={onBack} className="shrink-0 cursor-pointer transition-opacity duration-[var(--duration-fast)] hover:opacity-80"
             style={{ color: 'var(--text-secondary)' }} aria-label="返回首页">
@@ -104,61 +111,74 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
           <span data-testid="connection-status"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
             style={{
-              background: isConnected ? 'rgba(239,68,68,0.12)' : 'rgba(148,163,184,0.1)',
+              background: isConnected ? 'rgba(255,69,58,0.08)' : 'rgba(110,110,115,0.10)',
               color: isConnected ? 'var(--accent-live)' : 'var(--text-muted)',
             }}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[var(--accent-live)] animate-pulse' : 'bg-[var(--text-muted)]'}`} />
+            <span className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: isConnected ? 'var(--accent-live)' : 'var(--text-muted)',
+                animation: isConnected ? 'pulse-live 2s ease-in-out infinite' : 'none',
+              }} />
             {isConnected ? '直播中' : '已断开'}
           </span>
-          <button className="px-3 py-1.5 rounded-[var(--radius-sm)] text-xs font-medium cursor-pointer
-            transition-colors duration-[var(--duration-fast)] border hover:bg-[var(--bg-elevated)]"
-            style={{ background: 'transparent', borderColor: 'var(--border-accent)', color: 'var(--text-secondary)' }}>
+          <button className="px-3 py-1.5 rounded-[16px] text-xs font-medium cursor-pointer
+            transition-colors duration-[var(--duration-fast)]"
+            style={{ background: 'transparent', border: '0.5px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
             结束讨论
           </button>
         </div>
       </header>
 
-      {/* ── discussion_end 浮层 ──────────────────── */}
+      {/* ── discussion_end banner ── */}
       {discussionEnded && hostSummary && (
-        <div data-testid="discussion-end-banner" className="shrink-0 p-4 border-b" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-accent)' }}>
+        <div data-testid="discussion-end-banner" className="shrink-0 p-5 mx-4 mt-4 rounded-[var(--radius-lg)]"
+          style={{ ...glassPanel, border: '0.5px solid var(--glass-border)' }}>
           <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>讨论结束 — 主持人总结</p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hostSummary}</p>
         </div>
       )}
 
-      {/* ── 桌面三列 ─────────────────────────────── */}
-      <div className="hidden md:flex flex-1 min-h-0">
-        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto p-4 border-r" style={{ borderColor: 'var(--border-default)', ...panelProps }}>
+      {/* ── Desktop 3-column: glass panels with gap, no harsh dividers ── */}
+      <div className="hidden md:flex flex-1 min-h-0 gap-1 p-1">
+        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
+          style={glassPanel}>
           <PanelistGrid panelists={gridPanelists} />
         </aside>
-        <main className="flex-[1.2] min-w-0 min-h-0 overflow-y-auto p-4 border-r" style={{ borderColor: 'var(--border-default)', ...panelProps }}>
-          <h2 className="text-sm font-semibold mb-3 px-1" style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-secondary)' }}>现场 Transcript</h2>
+        <main className="flex-[1.2] min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
+          style={glassPanel}>
+          <h2 className="text-xs font-semibold mb-4 px-1 tracking-wider uppercase"
+            style={{ fontFamily: 'var(--font-heading)', color: 'var(--text-muted)' }}>
+            现场 Transcript
+          </h2>
           <TranscriptPanel utterances={uttEntries} />
         </main>
-        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto p-4" style={panelProps}>
+        <aside className="flex-1 min-w-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-4"
+          style={glassPanel}>
           <ConsensusPanel consensus={consensusCards} divergences={divergenceCards} />
         </aside>
       </div>
 
-      {/* ── 平板双列 ─────────────────────────────── */}
-      <div className="hidden sm:flex md:hidden flex-1 min-h-0">
-        <aside className="w-[200px] shrink-0 min-h-0 overflow-y-auto p-3 border-r" style={{ borderColor: 'var(--border-default)', ...panelProps }}>
+      {/* ── Tablet 2-column ── */}
+      <div className="hidden sm:flex md:hidden flex-1 min-h-0 gap-1 p-1">
+        <aside className="w-[200px] shrink-0 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-3"
+          style={glassPanel}>
           <PanelistGrid panelists={gridPanelists} />
         </aside>
-        <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-          <div className="shrink-0 flex border-b" style={{ borderColor: 'var(--border-default)' }}>
+        <div className="flex-1 min-w-0 min-h-0 flex flex-col rounded-[var(--radius-lg)]"
+          style={glassPanel}>
+          <div className="shrink-0 flex" style={{ borderBottom: '0.5px solid var(--glass-border)' }}>
             {(['transcript','consensus'] as const).map(t => (
               <button key={t} onClick={() => setMobileTab(t as 'transcript'|'consensus')}
                 className="flex-1 py-2 text-xs font-medium cursor-pointer"
                 style={{
-                  color: mobileTab === t ? 'var(--text-primary)' : 'var(--text-muted)',
-                  borderBottom: mobileTab === t ? '2px solid #E2E8F0' : '2px solid transparent',
+                  color: mobileTab === t ? 'var(--accent-brand)' : 'var(--text-muted)',
+                  borderBottom: mobileTab === t ? '2px solid var(--accent-brand)' : '2px solid transparent',
                 }}>
                 {t === 'transcript' ? 'Transcript' : '共识与分歧'}
               </button>
             ))}
           </div>
-          <div className="flex-1 min-h-0 overflow-y-auto p-3" style={panelProps}>
+          <div className="flex-1 min-h-0 overflow-y-auto p-3">
             {mobileTab === 'transcript'
               ? <TranscriptPanel utterances={uttEntries} />
               : <ConsensusPanel consensus={consensusCards} divergences={divergenceCards} />
@@ -167,20 +187,19 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
         </div>
       </div>
 
-      {/* ── 窄屏单列 + 底部 tab ──────────────────── */}
-      <div className="flex sm:hidden flex-1 min-h-0 flex-col">
-        <div className="flex-1 min-h-0 overflow-y-auto p-3" style={panelProps}>
+      {/* ── Mobile single-column + bottom tabs ── */}
+      <div className="flex sm:hidden flex-1 min-h-0 flex-col p-1">
+        <div className="flex-1 min-h-0 overflow-y-auto rounded-[var(--radius-lg)] p-3" style={glassPanel}>
           {mobileTab === 'panelists' && <PanelistGrid panelists={gridPanelists} />}
           {mobileTab === 'transcript' && <TranscriptPanel utterances={uttEntries} />}
           {mobileTab === 'consensus' && <ConsensusPanel consensus={consensusCards} divergences={divergenceCards} />}
         </div>
-        <nav className="shrink-0 h-12 flex border-t" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+        <nav className="shrink-0 h-12 flex rounded-[var(--radius-lg)] m-1" style={{ ...glassPanel, border: '0.5px solid var(--glass-border)' }}>
           {tabDefs.map(t => (
             <button key={t.key} onClick={() => setMobileTab(t.key)}
               className="flex-1 text-[11px] font-medium cursor-pointer"
               style={{
-                color: mobileTab === t.key ? 'var(--text-primary)' : 'var(--text-muted)',
-                borderTop: mobileTab === t.key ? '2px solid #E2E8F0' : '2px solid transparent',
+                color: mobileTab === t.key ? 'var(--accent-brand)' : 'var(--text-muted)',
               }}>
               {t.label}
             </button>
