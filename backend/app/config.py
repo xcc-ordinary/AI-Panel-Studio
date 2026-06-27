@@ -8,8 +8,12 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
 
-    # 前端地址，用于 CORS 白名单
-    frontend_origin: str = "http://localhost:5173"
+    # 前端地址（逗号分隔多个），用于 CORS 白名单
+    frontend_origins: str = "http://localhost:5173,http://localhost:5174"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.frontend_origins.split(",") if o.strip()]
 
     # 数据库
     database_path: str = "data/apanel.db"

@@ -157,6 +157,11 @@ async def confirm_panelists(discussion_id: str, db=Depends(get_db)):
         raise HTTPException(status_code=400, detail="讨论状态不允许确认阵容")
     await db.execute("UPDATE discussion SET status='in_progress' WHERE id=?", (discussion_id,))
     await db.commit()
+
+    # ── 启动讨论编排器 ──────────────────────────────
+    from app.services.discussion_orchestrator import spawn_discussion
+    await spawn_discussion(discussion_id)
+
     return {"discussion_id": discussion_id, "status": "in_progress"}
 
 
@@ -194,6 +199,11 @@ async def delete_discussion(discussion_id: str, db=Depends(get_db)):
     row = await db.execute("SELECT id FROM discussion WHERE id = ?", (discussion_id,))
     if (await row.fetchone()) is None:
         raise HTTPException(status_code=404, detail="讨论不存在")
+
+    # ── 取消正在运行的编排器 ──────────────────────
+    from app.services.discussion_orchestrator import cancel_discussion
+    await cancel_discussion(discussion_id)
+
     await db.execute("DELETE FROM discussion WHERE id = ?", (discussion_id,))
     await db.commit()
     return {"deleted": True}
