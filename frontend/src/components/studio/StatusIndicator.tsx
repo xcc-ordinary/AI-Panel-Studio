@@ -19,7 +19,7 @@ export default function StatusIndicator({ status, size = 'sm' }: StatusIndicator
   const pulse = status === 'preparing' || status === 'speaking';
 
   return (
-    <span className="inline-flex items-center gap-1.5" title={label}>
+    <span data-testid={`status-${status}`} className="inline-flex items-center gap-1.5" title={label}>
       <span
         className={`inline-block ${dims} rounded-full shrink-0`}
         style={{

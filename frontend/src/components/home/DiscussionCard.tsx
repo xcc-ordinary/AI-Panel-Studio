@@ -34,6 +34,8 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
 
   return (
     <article
+      data-testid="discussion-card"
+      data-discussion-id={discussion.id}
       onClick={() => onClick(discussion.id, discussion.topic)}
       onKeyDown={e => { if (e.key === 'Enter') onClick(discussion.id, discussion.topic); }}
       tabIndex={0}
@@ -69,6 +71,7 @@ export default function DiscussionCard({ discussion, onClick }: DiscussionCardPr
           {discussion.topic}
         </h3>
         <span
+          data-testid="discussion-status-badge"
           className={`shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-medium
             ${isLive ? 'bg-red-500/10 text-red-400' : 'bg-slate-700/40 text-slate-400'}`}
         >

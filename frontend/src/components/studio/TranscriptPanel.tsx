@@ -30,6 +30,7 @@ export default function TranscriptPanel({ utterances }: TranscriptPanelProps) {
 
         return (
           <div
+            data-testid="utterance-entry"
             key={i}
             className="p-2.5 rounded-r-[var(--radius-sm)] mb-1"
             style={{

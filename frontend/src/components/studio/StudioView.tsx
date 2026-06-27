@@ -101,7 +101,8 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
           </h1>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+          <span data-testid="connection-status"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
             style={{
               background: isConnected ? 'rgba(239,68,68,0.12)' : 'rgba(148,163,184,0.1)',
               color: isConnected ? 'var(--accent-live)' : 'var(--text-muted)',
@@ -119,7 +120,7 @@ export default function StudioView({ discussionId, topic, onBack }: StudioViewPr
 
       {/* ── discussion_end 浮层 ──────────────────── */}
       {discussionEnded && hostSummary && (
-        <div className="shrink-0 p-4 border-b" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-accent)' }}>
+        <div data-testid="discussion-end-banner" className="shrink-0 p-4 border-b" style={{ background: 'var(--bg-elevated)', borderColor: 'var(--border-accent)' }}>
           <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>讨论结束 — 主持人总结</p>
           <p className="text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{hostSummary}</p>
         </div>

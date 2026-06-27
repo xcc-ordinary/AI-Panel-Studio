@@ -10,6 +10,9 @@ import aiosqlite
 import httpx
 from datetime import datetime, timezone
 
+# Force test mode before any app imports
+os.environ["APANEL_TEST"] = "true"
+
 from app.main import app
 from app.database import get_db, init_db
 
@@ -25,6 +28,7 @@ def _find_free_port():
 
 
 # ── 临时数据库 fixture ──────────────────────────────────────────
+
 
 @pytest.fixture
 async def db():
@@ -55,6 +59,7 @@ async def db():
 
 # ── FastAPI 依赖覆盖（REST 测试用 ASGITransport）───────────────
 
+
 @pytest.fixture
 async def client(db):
     """返回 AsyncClient，其 get_db 依赖被覆盖为测试数据库（ASGI 直连，用于 REST）。"""
@@ -72,19 +77,19 @@ async def client(db):
 
 # ── Live Server fixture（SSE 测试用真实 HTTP 连接）──────────────
 
+
 @pytest.fixture
 async def live_server(db):
     """启动 uvicorn 真实 HTTP 服务器，返回 base_url。SSE 流测试用。"""
     import uvicorn
     import app.api.sse.manager as sse_manager
-    import app.api.sse.events as sse_events
+    import app.services.discussion_orchestrator as orch
 
     # 清理上个测试残留的全局状态
     sse_manager._registry.clear()
-    for t in sse_events._fake_tasks.values():
-        t.cancel()
-    sse_events._fake_tasks.clear()
-    sse_events._fake_rounds.clear()
+    for o in list(orch._orchestrators.values()):
+        o.cancel()
+    orch._orchestrators.clear()
 
     async def override_get_db():
         return db
@@ -114,10 +119,9 @@ async def live_server(db):
         pass
 
     # 测试结束后清理
-    for t in sse_events._fake_tasks.values():
-        t.cancel()
-    sse_events._fake_tasks.clear()
-    sse_events._fake_rounds.clear()
+    for o in list(orch._orchestrators.values()):
+        o.cancel()
+    orch._orchestrators.clear()
     sse_manager._registry.clear()
 
     app.dependency_overrides.clear()
@@ -125,7 +129,9 @@ async def live_server(db):
 
 # ── 辅助函数：插入测试数据 ──────────────────────────────────────
 
-async def insert_discussion(db, id, topic, status="in_progress", expert_count=3, max_rounds=30, current_round=0, created_at=None, ended_at=None):
+
+async def insert_discussion(db, id, topic, status="in_progress", expert_count=3,
+                            max_rounds=30, current_round=0, created_at=None, ended_at=None):
     await db.execute(
         "INSERT INTO discussion (id, topic, status, expert_count, max_rounds, current_round, created_at, ended_at) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -134,10 +140,18 @@ async def insert_discussion(db, id, topic, status="in_progress", expert_count=3,
     await db.commit()
 
 
-async def insert_panelist(db, id, discussion_id, role="expert", name="测试专家", title="测试Title", stance="测试立场", color="#DC2626", status="idle", sort_order=1):
+async def insert_panelist(db, id, discussion_id, role="expert", name="测试专家",
+                          title="测试Title", stance="测试立场", color="#DC2626",
+                          status="idle", sort_order=1):
     await db.execute(
         "INSERT INTO panelist (id, discussion_id, role, name, title, stance, color, status, public_focus, sort_order) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', ?)",
         (id, discussion_id, role, name, title, stance, color, status, sort_order),
     )
     await db.commit()
+
+
+async def publish_test_event(db, discussion_id, event_type, payload):
+    """向 event 表 + SSE queue 发布一条测试事件（模拟 orchestrator publish）。"""
+    from app.api.sse.manager import publish
+    await publish(discussion_id, event_type, payload)

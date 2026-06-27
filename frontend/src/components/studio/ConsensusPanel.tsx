@@ -36,6 +36,7 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
         <div className="space-y-2">
           {consensus.map(c => (
             <div
+              data-testid="consensus-card"
               key={c.id}
               className="p-3 rounded-[var(--radius-md)] border transition-all duration-[var(--duration-normal)]"
               style={{
@@ -74,6 +75,7 @@ export default function ConsensusPanel({ consensus, divergences }: ConsensusPane
         <div className="space-y-2">
           {divergences.map(d => (
             <div
+              data-testid="divergence-card"
               key={d.id}
               className="p-3 rounded-[var(--radius-md)] border transition-all duration-[var(--duration-normal)]"
               style={{

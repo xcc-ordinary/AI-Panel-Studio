@@ -23,7 +23,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
     setLoading(true);
     setError(null);
     try {
-      if (data.discussion_id !== 'mock-d') await confirmPanelists(data.discussion_id);
+      await confirmPanelists(data.discussion_id);
       onConfirmed(data.discussion_id, data.topic);
     } catch (err) {
       setError((err as Error).message);
@@ -36,13 +36,8 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
     setLoading(true);
     setError(null);
     try {
-      if (data.discussion_id !== 'mock-d') {
-        const res = await regeneratePanelists(data.discussion_id);
-        setPanelists(res.panelists);
-      } else {
-        await new Promise(r => setTimeout(r, 1000));
-        onBackToCreate();
-      }
+      const res = await regeneratePanelists(data.discussion_id);
+      setPanelists(res.panelists);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -60,6 +55,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
     <div className="max-w-[720px] mx-auto px-4 py-10">
       {/* 返回 */}
       <button
+        data-testid="roster-back-btn"
         onClick={onBackToCreate}
         className="inline-flex items-center gap-1.5 text-sm mb-6 cursor-pointer
                    transition-colors duration-[var(--duration-fast)] hover:opacity-80"
@@ -149,6 +145,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
       {/* 操作按钮 */}
       <div className="flex gap-3">
         <button
+          data-testid="regenerate-btn"
           onClick={handleRegenerate}
           className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]
                      text-sm font-medium cursor-pointer transition-all duration-[var(--duration-fast)]
@@ -163,6 +160,7 @@ export default function PanelistRoster({ data, onBackToCreate, onConfirmed }: Pa
           重新生成
         </button>
         <button
+          data-testid="confirm-roster-btn"
           onClick={handleConfirm}
           className="flex-[2] inline-flex items-center justify-center gap-2 py-3 rounded-[var(--radius-md)]
                      text-sm font-semibold cursor-pointer transition-all duration-[var(--duration-fast)]

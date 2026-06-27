@@ -1,4 +1,12 @@
-/** SSE hook: 连接讨论事件流，解析 6 种命名事件，暴露 isConnected + lastEventId */
+/** SSE hook: 连接讨论事件流，解析 6 种命名事件，暴露 isConnected + lastEventId。
+ *
+ * 重连协议（Last-Event-ID）：
+ * - publish() 写入 id: {Event.seq} 行 → 浏览器自动记录 lastEventId
+ * - 断线后浏览器 EventSource 自动重连，请求头携带 Last-Event-ID
+ * - 后端 get_events_after_seq() 只补发 seq > Last-Event-ID 的事件
+ * - heartbeat / snapshot 不带 id: 字段，不污染浏览器 lastEventId
+ * - 前端 useDiscussion 按 seq 去重，防止重连/快照重复推送
+ */
 import { useEffect, useRef, useState, useCallback } from "react";
 
 export interface SSERawEvent {

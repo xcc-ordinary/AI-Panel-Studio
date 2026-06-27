@@ -24,7 +24,7 @@ export default function PanelistGrid({ panelists }: PanelistGridProps) {
     <div className="space-y-4">
       {/* 主持人区 */}
       {host && (
-        <div>
+        <div data-testid="host-section">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5"
             style={{ color: 'var(--text-muted)' }}>
             <Crown size={11} /> 主持人
@@ -35,7 +35,7 @@ export default function PanelistGrid({ panelists }: PanelistGridProps) {
 
       {/* 专家区 */}
       {experts.length > 0 && (
-        <div>
+        <div data-testid="experts-section">
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2 px-1"
             style={{ color: 'var(--text-muted)' }}>
             专家 · {experts.length} 人

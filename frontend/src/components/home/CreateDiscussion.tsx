@@ -103,6 +103,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                     讨论话题
                   </label>
                   <textarea
+                    data-testid="topic-input"
                     id="topic"
                     value={topic}
                     onChange={e => setTopic(e.target.value)}
@@ -132,6 +133,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                   </label>
                   <div className="flex items-center gap-3">
                     <button
+                      data-testid="expert-count-decrease"
                       type="button"
                       onClick={() => setExpertCount(c => Math.max(MIN_EXPERTS, c - 1))}
                       disabled={expertCount <= MIN_EXPERTS}
@@ -147,6 +149,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
                       {expertCount}
                     </span>
                     <button
+                      data-testid="expert-count-increase"
                       type="button"
                       onClick={() => setExpertCount(c => Math.min(MAX_EXPERTS, c + 1))}
                       disabled={expertCount >= MAX_EXPERTS}
@@ -168,7 +171,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
 
                 {/* 错误 */}
                 {error && (
-                  <div className="p-3 rounded-lg text-sm"
+                  <div data-testid="create-error" className="p-3 rounded-lg text-sm"
                     style={{ background: 'rgba(239,68,68,0.1)', color: '#EF4444' }}>
                     {error}
                   </div>
@@ -176,6 +179,7 @@ export default function CreateDiscussion({ onBack, onCreated }: CreateDiscussion
 
                 {/* 提交按钮 */}
                 <button
+                  data-testid="generate-panelists-btn"
                   type="submit"
                   disabled={!canSubmit}
                   className="w-full inline-flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold

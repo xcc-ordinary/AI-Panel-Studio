@@ -366,10 +366,11 @@ data: {"discussion_id":"uuid","summary":"感谢各位专家今天的精彩讨论
 每15秒无其他事件时发送，保持连接活跃。若30秒内未收到心跳，客户端应假设连接已断开并重连。
 
 ```
-id: 9
 event: heartbeat
 data: {"timestamp":"2026-06-26T10:02:15Z"}
 ```
+
+> heartbeat 故意**不携带 `id` 字段**——不得修改浏览器的 `lastEventId`。
 
 ---
 
@@ -387,9 +388,8 @@ data: {"timestamp":"2026-06-26T10:02:15Z"}
 #### `snapshot` 事件（仅重连时发送）
 
 ```
-id: 0
 event: snapshot
 data: {"consensus_points":[...],"divergence_points":[...],"recent_utterances":[...],"current_round":12,"last_event_seq":12}
 ```
 
-> `snapshot` 使用 `id: 0` 以区别于常规事件。紧随其后的是断线期间缺失的增量事件重放。
+> snapshot 故意**不携带 `id` 字段**——不得修改浏览器的 `lastEventId`，保证重连序列号连续。紧随其后的是断线期间缺失的增量事件重放。

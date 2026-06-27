@@ -19,6 +19,7 @@ interface PanelistWindowProps {
 export default function PanelistWindow({ panelist, isHost }: PanelistWindowProps) {
   return (
     <div
+      data-testid={`panelist-window-${panelist.name}`}
       className="p-3 rounded-[var(--radius-md)] transition-colors duration-[var(--duration-fast)]"
       style={{
         background: isHost ? 'var(--bg-elevated)' : 'var(--bg-surface)',
