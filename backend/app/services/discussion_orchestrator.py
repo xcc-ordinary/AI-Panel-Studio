@@ -97,7 +97,45 @@ class DiscussionOrchestrator:
               f"round={current_round}/{max_rounds} panelists={len(panelists)}", flush=True)
 
         try:
-            # ── 主循环：只受 max_rounds 控制，LLM 无权提前结束 ──
+            # ═══════════════════════════════════════════════════════
+            # Phase 1: 主持人开场
+            # ═══════════════════════════════════════════════════════
+            transcript = await self._load_transcript(db)
+            panelist_states = self._build_states(panelists, transcript)
+            decision = await self.scheduler.decide_next_speaker(
+                self.discussion_id, transcript, panelist_states,
+                current_round, max_rounds,
+            )
+            speaker_id = decision["speaker_id"]
+            speaker = next((p for p in panelists if p["id"] == speaker_id), panelists[0])
+            await self._persist_and_publish(db, decision, speaker, current_round, panelists)
+            current_round += 1
+            await asyncio.sleep(1.5)
+
+            # ═══════════════════════════════════════════════════════
+            # Phase 2: 专家立论——每人亮出开场陈述
+            # ═══════════════════════════════════════════════════════
+            experts = [p for p in panelists if p.get("role") != "host"]
+            print(f"[orchestrator] generating opening statements for {len(experts)} experts...", flush=True)
+            for expert in experts:
+                if self._cancelled or current_round >= max_rounds:
+                    break
+                try:
+                    statement = await self._generate_opening_statement(
+                        expert["name"], expert.get("stance", ""), topic,
+                    )
+                except Exception:
+                    statement = f"我是{expert['name']}，我的立场是{expert.get('stance', '')}。我认为这个话题需要在实践中寻找答案。"
+
+                await self._persist_and_publish(db, {
+                    "speaker_id": expert["id"], "type": "statement", "content": statement,
+                }, expert, current_round, panelists)
+                current_round += 1
+                await asyncio.sleep(1.0)
+
+            # ═══════════════════════════════════════════════════════
+            # Phase 3: 自由辩论——只受 max_rounds 控制
+            # ═══════════════════════════════════════════════════════
             while not self._cancelled and current_round < max_rounds:
                 # ── Load transcript ──────────────────────────
                 transcript = await self._load_transcript(db)
@@ -111,78 +149,148 @@ class DiscussionOrchestrator:
                     current_round, max_rounds,
                 )
 
-                # ── Persist utterance ─────────────────────────
-                speaker_id = decision["speaker_id"]
-                speaker = next((p for p in panelists if p["id"] == speaker_id), panelists[0])
-
-                utt_id = str(uuid.uuid4())
-                await db.execute(
-                    "INSERT INTO utterance (id, discussion_id, round_no, panelist_id, type, content, created_at) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (utt_id, self.discussion_id, current_round, speaker_id,
-                     decision["type"], decision["content"], _now()),
-                )
-                await db.execute(
-                    "UPDATE discussion SET current_round = ? WHERE id = ?",
-                    (current_round + 1, self.discussion_id),
-                )
-                await db.commit()
-
-                # ── Publish utterance SSE event ───────────────
-                await publish(self.discussion_id, "utterance", {
-                    "id": utt_id,
-                    "round_no": current_round,
-                    "panelist_id": speaker_id,
-                    "panelist_name": speaker["name"],
-                    "panelist_title": speaker["title"],
-                    "panelist_color": speaker["color"],
-                    "type": decision["type"],
-                    "content": decision["content"],
-                    "created_at": _now(),
-                })
-
-                # ── Publish status: speaking → idle ────────────
-                await publish(self.discussion_id, "panelist_status", {
-                    "panelist_id": speaker_id,
-                    "status": "speaking",
-                    "public_focus": "[]",
-                })
-                await asyncio.sleep(1.2)
-                await publish(self.discussion_id, "panelist_status", {
-                    "panelist_id": speaker_id,
-                    "status": "idle",
-                    "public_focus": "[]",
-                })
-
+                # ── Persist + publish (refactored) ──────────────
+                speaker = next((p for p in panelists if p["id"] == decision["speaker_id"]), panelists[0])
+                await self._persist_and_publish(db, decision, speaker, current_round, panelists)
                 current_round += 1
 
                 # ── Extract consensus every N rounds ────────────
                 if current_round > 0 and current_round % CONSENSUS_INTERVAL == 0:
-                    await self._extract_and_publish(
-                        db, transcript, panelists,
-                        existing_c_ids, existing_d_ids,
-                    )
+                    # 独立 try-except：提取失败不应当终止整场讨论
+                    try:
+                        await self._extract_and_publish(
+                            db, transcript, panelists,
+                            existing_c_ids, existing_d_ids,
+                        )
+                    except Exception as _extract_exc:
+                        print(
+                            f"[orchestrator] CRITICAL: _extract_and_publish crashed!\n"
+                            f"  Error: {type(_extract_exc).__name__}: {_extract_exc}\n"
+                            f"  Traceback:",
+                            flush=True,
+                        )
+                        import traceback as _tb
+                        _tb.print_exc()
+                        # 讨论继续——不能因为提取失败就终止
 
                 # ── Pacing between rounds ─────────────────────
                 await asyncio.sleep(2.0)
 
             # ═══════════════════════════════════════════════════════
-            # 主循环自然结束（current_round >= max_rounds）→ 100% 触发总结
+            # 主循环自然结束（current_round >= max_rounds）→ 强制触发总结
             # ═══════════════════════════════════════════════════════
             if not self._cancelled:
                 print(f"[orchestrator] max_rounds reached, generating summary...", flush=True)
-                await self._emit_discussion_end_bulletproof(db, current_round, topic, panelists)
+                try:
+                    await self._emit_discussion_end_bulletproof(db, current_round, topic, panelists)
+                except Exception as _end_exc:
+                    print(f"[orchestrator] CRITICAL: _emit_discussion_end_bulletproof failed: {_end_exc}", flush=True)
+                    # 终极安全网——裸 publish discussion_end
+                    try:
+                        await publish(self.discussion_id, "discussion_end", {
+                            "discussion_id": self.discussion_id,
+                            "summary": "感谢各位专家的精彩讨论，本场圆桌正式结束。",
+                            "total_rounds": current_round,
+                            "silent_panelists": [],
+                            "ended_at": _now(),
+                        })
+                    except Exception:
+                        pass
 
         except Exception as exc:
             print(f"[orchestrator] discussion={self.discussion_id} error: {exc}", flush=True)
             import traceback
             traceback.print_exc()
-            await self._emit_discussion_end_bulletproof(db, current_round, "（异常结束）", panelists)
+            # 即使异常路径的 bulletproof 也失败了，也要发 discussion_end
+            try:
+                await self._emit_discussion_end_bulletproof(db, current_round, "（异常结束）", panelists)
+            except Exception:
+                try:
+                    await publish(self.discussion_id, "discussion_end", {
+                        "discussion_id": self.discussion_id,
+                        "summary": "讨论因技术原因提前结束，感谢各位专家的参与。",
+                        "total_rounds": current_round,
+                        "silent_panelists": [],
+                        "ended_at": _now(),
+                    })
+                except Exception:
+                    pass
         finally:
+            # ── 无论如何更新 DB 状态 ──
+            try:
+                await db.execute(
+                    "UPDATE discussion SET status = 'ended', ended_at = ? WHERE id = ?",
+                    (_now(), self.discussion_id),
+                )
+                await db.commit()
+            except Exception:
+                pass
             print(f"[orchestrator] discussion={self.discussion_id} finished", flush=True)
             _orchestrators.pop(self.discussion_id, None)
 
     # ── helpers ───────────────────────────────────────────────────
+
+    async def _persist_and_publish(
+        self, db, decision: dict, speaker: dict, round_no: int, panelists: list[dict],
+    ) -> str:
+        """持久化发言 + 发布 SSE utterance + speaking/idle 状态切换。返回 utterance ID。"""
+        utt_id = str(uuid.uuid4())
+        await db.execute(
+            "INSERT INTO utterance (id, discussion_id, round_no, panelist_id, type, content, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (utt_id, self.discussion_id, round_no, decision["speaker_id"],
+             decision["type"], decision["content"], _now()),
+        )
+        await db.execute(
+            "UPDATE discussion SET current_round = ? WHERE id = ?",
+            (round_no + 1, self.discussion_id),
+        )
+        await db.commit()
+
+        await publish(self.discussion_id, "utterance", {
+            "id": utt_id, "round_no": round_no,
+            "panelist_id": decision["speaker_id"],
+            "panelist_name": speaker["name"],
+            "panelist_title": speaker["title"],
+            "panelist_color": speaker["color"],
+            "type": decision["type"],
+            "content": decision["content"],
+            "created_at": _now(),
+        })
+
+        # Status: speaking → idle
+        await publish(self.discussion_id, "panelist_status", {
+            "panelist_id": decision["speaker_id"],
+            "status": "speaking", "public_focus": "[]",
+        })
+        await asyncio.sleep(1.2)
+        await publish(self.discussion_id, "panelist_status", {
+            "panelist_id": decision["speaker_id"],
+            "status": "idle", "public_focus": "[]",
+        })
+        return utt_id
+
+    async def _generate_opening_statement(
+        self, name: str, stance: str, topic: str,
+    ) -> str:
+        """调 LLM 为一位专家生成开场立论陈述。异常时返回兜底陈述。"""
+        from app.llm.prompts import OPENING_STATEMENT_SYSTEM, OPENING_STATEMENT_USER
+        from app.llm.client import chat_completion
+
+        messages = [
+            {"role": "system", "content": OPENING_STATEMENT_SYSTEM},
+            {"role": "user", "content": OPENING_STATEMENT_USER.format(
+                topic=topic, name=name, stance=stance,
+            )},
+        ]
+        try:
+            resp = await chat_completion(messages, temperature=0.7)
+            content = resp["choices"][0]["message"]["content"]
+            content = content.strip().strip('"').strip("'").strip()
+            return content if content else f"我是{name}。关于{topic}，我的立场是{stance}。"
+        except Exception as e:
+            print(f"[orchestrator] opening statement for {name} failed: {e}", flush=True)
+            return f"我是{name}。关于{topic}，我的立场是{stance}。我希望通过今天的讨论找到更多共识。"
 
     async def _load_transcript(self, db) -> list[dict]:
         rows = await db.execute(
@@ -266,32 +374,54 @@ class DiscussionOrchestrator:
         print(f"[orchestrator] consensus result: c={len(result.get('consensus_points',[]))} d={len(result.get('divergence_points',[]))}", flush=True)
 
         for cp in result.get("consensus_points", []):
-            if cp["id"] in existing_c_ids:
+            if not isinstance(cp, dict):
                 continue
-            existing_c_ids.add(cp["id"])
+            cid = cp.get("id", str(uuid.uuid4()))
+            if cid in existing_c_ids:
+                continue
+            existing_c_ids.add(cid)
+            now = _now()
+            c_content = cp.get("content", "") or "(共识点)"
+            c_involved = cp.get("involved_panelist_ids", []) or []
             await db.execute(
                 "INSERT INTO consensus_point (id, discussion_id, content, involved_panelist_ids, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (cp["id"], self.discussion_id, cp["content"],
-                 _json.dumps(cp["involved_panelist_ids"], ensure_ascii=False),
-                 cp["created_at"], cp["updated_at"]),
+                (cid, self.discussion_id, c_content,
+                 _json.dumps(c_involved, ensure_ascii=False),
+                 cp.get("created_at", now), cp.get("updated_at", now)),
             )
             await db.commit()
-            await publish(self.discussion_id, "consensus_update", cp)
+            await publish(self.discussion_id, "consensus_update", {
+                "id": cid, "content": c_content,
+                "involved_panelist_ids": c_involved,
+                "created_at": cp.get("created_at", now),
+                "updated_at": cp.get("updated_at", now),
+            })
 
         for dp in result.get("divergence_points", []):
-            if dp["id"] in existing_d_ids:
+            if not isinstance(dp, dict):
                 continue
-            existing_d_ids.add(dp["id"])
+            did = dp.get("id", str(uuid.uuid4()))
+            if did in existing_d_ids:
+                continue
+            existing_d_ids.add(did)
+            now = _now()
+            d_description = dp.get("description", "") or "(分歧点)"
+            d_camps = dp.get("camps", []) or []
             await db.execute(
                 "INSERT INTO divergence_point (id, discussion_id, description, camps, created_at, updated_at) "
                 "VALUES (?, ?, ?, ?, ?, ?)",
-                (dp["id"], self.discussion_id, dp["description"],
-                 _json.dumps(dp["camps"], ensure_ascii=False),
-                 dp["created_at"], dp["updated_at"]),
+                (did, self.discussion_id, d_description,
+                 _json.dumps(d_camps, ensure_ascii=False),
+                 dp.get("created_at", now), dp.get("updated_at", now)),
             )
             await db.commit()
-            await publish(self.discussion_id, "divergence_update", dp)
+            await publish(self.discussion_id, "divergence_update", {
+                "id": did, "description": d_description,
+                "camps": d_camps,
+                "created_at": dp.get("created_at", now),
+                "updated_at": dp.get("updated_at", now),
+            })
 
     async def _generate_summary(
         self, db, topic: str, transcript: list[dict],
@@ -353,7 +483,14 @@ class DiscussionOrchestrator:
                     content = content.replace("```json", "").replace("```", "").strip()
             return content
         except Exception as e:
-            print(f"[orchestrator] Summary generation failed: {e}", flush=True)
+            print(
+                f"[orchestrator] CRITICAL: _generate_summary failed!\n"
+                f"  Error: {type(e).__name__}: {e}\n"
+                f"  repr: {repr(e)}",
+                flush=True,
+            )
+            import traceback as _tb3
+            _tb3.print_exc()
             return "感谢各位专家的精彩讨论。本次圆桌就相关话题进行了深入交流，各方在多个层面达成共识，也存在值得继续探讨的分歧。期待下期再会。"
 
     async def _generate_summary_safe(
@@ -391,17 +528,25 @@ class DiscussionOrchestrator:
         except Exception as e:
             print(f"[orchestrator] summary generation failed, using fallback: {e}", flush=True)
 
-        # Step 2: 安全构建 silent_panelists（列表推导式可能炸）
+        # Step 2: 安全构建 silent_panelists（用 for 循环，绝不抛异常）
         try:
             final_transcript = await self._load_transcript(db)
             states = self._build_states(panelists, final_transcript)
-            silent_panelists = [
-                {"id": s["id"], "name": s.get("name", "?")}
-                for s in states
-                if s.get("silent_rounds", 0) >= 5
-            ]
+            silent_panelists = []
+            for s in states:
+                try:
+                    if s.get("silent_rounds", 0) >= 5:
+                        silent_panelists.append({
+                            "id": s.get("id", ""),
+                            "name": s.get("name", "未知嘉宾"),
+                        })
+                except Exception:
+                    # 单条记录构建失败不影响整体
+                    continue
         except Exception as e:
-            print(f"[orchestrator] building silent_panelists failed: {e}", flush=True)
+            print(f"[orchestrator] CRITICAL: building silent_panelists failed: {type(e).__name__}: {e}", flush=True)
+            import traceback as _tb2
+            _tb2.print_exc()
             silent_panelists = []
 
         # Step 3: 发布 discussion_end（必须成功——这是前端浮层的触发器）

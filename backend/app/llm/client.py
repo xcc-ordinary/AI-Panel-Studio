@@ -39,6 +39,8 @@ async def chat_completion(
         body["frequency_penalty"] = frequency_penalty
 
     if response_format == "json_object":
+        # DeepSeek JSON Mode: 物理约束 LLM 输出纯 JSON，不加 Markdown 包裹
+        # 文档: https://api-docs.deepseek.com/guides/json_mode
         body["response_format"] = {"type": "json_object"}
 
     headers = {

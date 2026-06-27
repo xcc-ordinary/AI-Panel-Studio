@@ -51,6 +51,9 @@ class SpeechScheduler:
                 "content": self._build_opening(panelist_states),
             }
 
+        # ── 防"自我反驳"：提取上一轮发言人 ──────
+        last_speaker_id = transcript[-1].get("speaker_id", "") if transcript else ""
+
         # ── 组装 prompt → 调 LLM ─────────────────
         from app.llm.prompts import SPEECH_SCHEDULING_SYSTEM, SPEECH_SCHEDULING_USER
 
@@ -132,6 +135,21 @@ class SpeechScheduler:
                     "speaker_id": host["id"] if host else panelist_states[0]["id"],
                     "type": "question",
                     "content": self._build_fallback_question(panelist_states, transcript),
+                }
+
+            # ── 防"自我反驳"：禁止同一专家连续发言 2 轮 ──
+            # 这条规则对 host 豁免（host 可能需要连续追问不同专家）
+            if speaker_id and speaker_id == last_speaker_id and speaker_role != "host":
+                # LLM 选了和上一轮完全相同的人——换一个不同的专家
+                host = self._find_host(panelist_states)
+                other_expert = self._pick_other_expert(panelist_states, transcript, speaker_id)
+                return {
+                    "speaker_id": other_expert["id"] if other_expert else (
+                        host["id"] if host else panelist_states[0]["id"]
+                    ),
+                    "type": "statement" if other_expert else "question",
+                    "content": other_expert.get("name", "") + "，您对刚才的观点有什么回应吗？"
+                    if other_expert else "让我们听听其他人的看法。",
                 }
 
             return {
@@ -254,11 +272,64 @@ class SpeechScheduler:
         names = "、".join([e["name"] for e in experts[:4]])
         return f"欢迎各位来到今天的圆桌讨论。今天我们有{len(experts)}位来自不同领域的专家——{names}——共同探讨这个话题。让我们开始吧！"
 
+    _FALLBACK_PATTERNS = [
+        "{name}老师，刚才的讨论很激烈，我想听听您的看法。",
+        "我想转换一下视角——{name}老师，您怎么看这个问题？",
+        "刚才几位嘉宾的观点很有启发性。{name}老师，您有什么不同意见吗？",
+        "我们还没听到{name}老师的观点，请分享一下您的看法。",
+        "关于这个话题，{name}老师一定有独到的见解。请说。",
+    ]
+
     def _build_fallback_question(self, states: list[dict], transcript: list[dict]) -> str:
-        experts = [s for s in states if s.get("role") != "host" and s.get("silent_rounds", 0) < SILENT_THRESHOLD]
-        if experts:
-            return f"{experts[0]['name']}，您对这个话题有什么看法？"
-        return "各位专家，还有什么想要补充的吗？"
+        """选一个最近没怎么发言的专家提问（不再总是 experts[0]）。"""
+        # 统计最近 5 轮中每个人的发言次数
+        recent_5 = transcript[-5:] if len(transcript) >= 5 else transcript
+        speak_counts: dict[str, int] = {}
+        for t in recent_5:
+            sid = t.get("speaker_id", "")
+            speak_counts[sid] = speak_counts.get(sid, 0) + 1
+
+        # 最后发言人——绝对不能选 TA
+        last_speaker = transcript[-1].get("speaker_id", "") if transcript else ""
+
+        # 从专家中选：排除 host、排除最后发言人、排除沉默超过阈值的
+        experts = [
+            s for s in states
+            if s.get("role") != "host"
+            and s["id"] != last_speaker
+            and s.get("silent_rounds", 0) < SILENT_THRESHOLD
+        ]
+        if not experts:
+            # 没合适的人——退回到所有非 host 专家（仍排除最后发言人）
+            experts = [s for s in states if s.get("role") != "host" and s["id"] != last_speaker]
+        if not experts:
+            return random.choice([
+                "各位专家，还有什么想要补充的吗？",
+                "还有其他不同的声音吗？请继续。",
+                "这个讨论越来越有意思了。谁还有新的角度？",
+            ])
+
+        # 按最近发言次数升序排列（发言少的优先）
+        experts.sort(key=lambda e: speak_counts.get(e["id"], 0))
+
+        pattern = random.choice(self._FALLBACK_PATTERNS)
+        return pattern.format(name=experts[0]["name"])
+
+    def _pick_other_expert(
+        self, states: list[dict], transcript: list[dict], exclude_id: str
+    ) -> dict | None:
+        """选出一个不是 exclude_id 的专家（避免自我反驳）。"""
+        experts = [s for s in states if s.get("role") != "host" and s["id"] != exclude_id]
+        if not experts:
+            return None
+        # 选发言最少的
+        counts = {e["id"]: 0 for e in experts}
+        for t in transcript:
+            sid = t.get("speaker_id", "")
+            if sid in counts:
+                counts[sid] += 1
+        quietest_id = min(counts, key=counts.get)
+        return next((e for e in experts if e["id"] == quietest_id), experts[0])
 
     def _pick_quietest_expert(self, states: list[dict], transcript: list[dict]) -> dict | None:
         """选出发言轮次最少的专家（用于主持人有目标地追问）。"""

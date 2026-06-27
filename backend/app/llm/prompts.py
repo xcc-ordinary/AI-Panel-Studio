@@ -23,7 +23,9 @@ PANELIST_GENERATION_USER = """话题：{topic}
 
 # ── 发言调度 ──────────────────────────────────────────────
 
-SPEECH_SCHEDULING_SYSTEM = """你是一个专业圆桌讨论的调度员。根据当前讨论的 transcript 和每位嘉宾的状态，决定下一轮由谁发言。
+SPEECH_SCHEDULING_SYSTEM = """**YOU MUST STRICTLY RETURN A VALID JSON OBJECT AND NOTHING ELSE. NO MARKDOWN. NO EXPLANATION. NO THOUGHTS. PURE RAW JSON ONLY. THE FIRST CHARACTER OF YOUR RESPONSE MUST BE `{`.**
+
+你是一个专业圆桌讨论的调度员。根据当前讨论的 transcript 和每位嘉宾的状态，决定下一轮由谁发言。
 
 ## 核心调度原则
 
@@ -108,6 +110,8 @@ SPEECH_SCHEDULING_SYSTEM = """你是一个专业圆桌讨论的调度员。根�
 }
 
 【输出格式严格警告】：你必须且只能输出 RAW JSON 格式！绝对不允许在 JSON 外面包裹 ```json 这样的 Markdown 标记，也不允许输出任何解释性文字！直接输出裸 JSON 对象，第一个字符必须是 `{`。
+
+**重申：THE FIRST CHARACTER OF YOUR RESPONSE MUST BE `{`. NO MARKDOWN. NO ```json. NO TEXT BEFORE OR AFTER THE JSON OBJECT.**
 """
 
 SPEECH_SCHEDULING_USER = """## 当前阵容名单（必须牢记）
@@ -131,7 +135,9 @@ SPEECH_SCHEDULING_USER = """## 当前阵容名单（必须牢记）
 
 # ── 共识提炼 ──────────────────────────────────────────────
 
-CONSENSUS_EXTRACTION_SYSTEM = """你是一个专业圆桌讨论的分析师。根据最新的 transcript，提炼新出现的共识点和分歧点。
+CONSENSUS_EXTRACTION_SYSTEM = """**YOU MUST STRICTLY RETURN A VALID JSON OBJECT AND NOTHING ELSE. NO MARKDOWN. NO EXPLANATION. NO THOUGHTS BEFORE OR AFTER THE JSON. THE FIRST CHARACTER OF YOUR RESPONSE MUST BE `{`.**
+
+你是一个专业圆桌讨论的分析师。根据最新的 transcript，提炼新出现的共识点和分歧点。
 
 ## 核心原则：捕捉"论点级"颗粒度，拒绝表面归纳
 
@@ -253,7 +259,10 @@ CONSENSUS_EXTRACTION_SYSTEM = """你是一个专业圆桌讨论的分析师。�
 如果本轮无新发现，返回 {"thought_process": "...", "consensus_points": [], "divergence_points": []}。
 `thought_process` 仅用于后台审计，前端不展示。
 
-【输出格式严格警告】：你必须且只能输出 RAW JSON 格式！绝对不允许在 JSON 外面包裹 ```json 这样的 Markdown 标记，也不允许输出任何解释性文字！直接输出裸 JSON 对象，第一个字符必须是 `{`。"""
+【输出格式严格警告】：你必须且只能输出 RAW JSON 格式！绝对不允许在 JSON 外面包裹 ```json 这样的 Markdown 标记，也不允许输出任何解释性文字！直接输出裸 JSON 对象，第一个字符必须是 `{`。
+
+**重申：THE FIRST CHARACTER OF YOUR RESPONSE MUST BE `{`. NO MARKDOWN. NO ```json. NO THOUGHT_PROCESS OUTSIDE THE JSON. PUT thought_process INSIDE THE JSON OBJECT.**
+"""
 
 CONSENSUS_EXTRACTION_USER = """当前讨论 transcript（最近几轮发言）:
 {transcript}
@@ -272,6 +281,22 @@ CONSENSUS_EXTRACTION_USER = """当前讨论 transcript（最近几轮发言）:
 - 如果本轮讨论完全被已有记录覆盖，放心地返回空数组
 - `thought_process` 必须写明比对了哪些已有条目、为什么决定输出或不输出
 - 直接输出 JSON，不要额外解释"""
+
+# ── 专家立论 ──────────────────────────────────────────────
+
+OPENING_STATEMENT_SYSTEM = """你正在参加一场圆桌讨论。根据你的姓名、立场和讨论话题，发表一句坚定、清晰的开场陈述。
+
+规则：
+1. 1-2 句话，简洁有力，亮明你的核心立场和理由
+2. 用第一人称"我"，语气自信但不傲慢
+3. 不要说"大家好"、"谢谢主持人"等寒暄——直接进入论点
+4. 直接输出纯文本，不要 JSON，不要引号包裹"""
+
+OPENING_STATEMENT_USER = """话题：{topic}
+你的姓名：{name}
+你的立场：{stance}
+
+请发表你的开场陈述。"""
 
 # ── 讨论总结 ──────────────────────────────────────────────
 
